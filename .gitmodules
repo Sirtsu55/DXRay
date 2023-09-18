@@ -1,0 +1,6 @@
+[submodule "Deps/D3D12MemoryAllocator"]
+	path = Deps/D3D12MemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator.git
+[submodule "Deps/DirectX-Headers"]
+	path = Deps/DirectX-Headers
+	url = https://github.com/microsoft/DirectX-Headers.git

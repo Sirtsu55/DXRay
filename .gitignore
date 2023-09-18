@@ -1,3 +1,14 @@
+
+
+
+# Visual Studio
+out/
+build/
+.vs/
+.vscode/
+
+CppProperties.json
+
 # Prerequisites
 *.d
 
