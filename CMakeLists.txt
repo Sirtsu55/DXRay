@@ -7,10 +7,14 @@ add_subdirectory("Deps/DirectX-Headers")
 add_subdirectory("Deps/D3D12MemoryAllocator")
 
 # Add the Library
-
 file(GLOB_RECURSE DXRaySOURCES "${PROJECT_SOURCE_DIR}/Source/*.cpp")
 
-add_executable(DXRay ${DXRaySOURCES})
+add_library(DXRay STATIC ${DXRaySOURCES})
+
+
+
+# Precompiled Headers
+target_precompile_headers(DXRay PUBLIC "${PROJECT_SOURCE_DIR}/Include/DXRay/DXRay.h")
 
 # Add the Include Directory
 target_include_directories(DXRay PUBLIC 
