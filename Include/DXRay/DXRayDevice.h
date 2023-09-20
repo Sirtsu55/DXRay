@@ -1,7 +1,11 @@
 #pragma once
 
 using Microsoft::WRL::ComPtr;
+
+// Namespace is too long to type out, so shorten it to DMA: |D|3D12 |M|emory |A|llocator
 namespace DMA = D3D12MA;
+
+/// @brief A wrapper around the D3D12 to use DXR. Can be used with COM smart pointers
 class DXRayDevice : public IUnknown
 {
 
@@ -42,4 +46,9 @@ private:
     /// @brief The D3D12 device
     ComPtr<DXRDevice> mDevice;
     ComPtr<DMA::Allocator> mAllocator;
+
+public:
+    bool operator==(const DXRayDevice& other) const;
+    DXRayDevice(const ComPtr<DXRDevice>& mDevice, const ComPtr<DMA::Allocator>& mAllocator)
+        : mDevice(mDevice), mAllocator(mAllocator);
 };
