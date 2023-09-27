@@ -11,10 +11,8 @@ file(GLOB_RECURSE DXRaySOURCES "${PROJECT_SOURCE_DIR}/Source/*.cpp")
 
 add_library(DXRay STATIC ${DXRaySOURCES})
 
-
-
 # Precompiled Headers
-target_precompile_headers(DXRay PUBLIC "${PROJECT_SOURCE_DIR}/Include/DXRay/DXRay.h")
+target_precompile_headers(DXRay PRIVATE "${PROJECT_SOURCE_DIR}/Include/DXRay/DXRay.h")
 
 # Add the Include Directory
 target_include_directories(DXRay PUBLIC 
