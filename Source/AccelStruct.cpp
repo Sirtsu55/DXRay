@@ -44,6 +44,18 @@ namespace DXR
         resDesc.SampleDesc.Quality = 0;
         resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-        return AllocateResource(resDesc, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+        auto outAccel = AllocateResource(resDesc, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE);
+
+        desc.BuildDesc.DestAccelerationStructureData = outAccel->GetResource()->GetGPUVirtualAddress();
+        return outAccel;
+    }
+
+    void Device::BuildAccelerationStructure(IAccelDesc& desc, ComPtr<ID3D12GraphicsCommandList4>& cmdList)
+    {
+        DXR_ASSERT(desc.HasBeenAllocated(), "No geometries provided for bottom level acceleration structure");
+
+        // TODO: Retrieve the prebuild info from the acceleration structure
+
+        cmdList->BuildRaytracingAccelerationStructure(&desc.BuildDesc, 0, nullptr);
     }
 } // namespace DXR

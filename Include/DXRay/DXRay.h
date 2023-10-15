@@ -22,7 +22,7 @@
 #include "DXRay/AccelStruct.h"
 
 // Enable debugging by default in debug builds, disable in release builds unless explicitly enabled
-#ifndef DXR_ENABLE_DEBUG || _DEBUG
+#if defined(DXR_ENABLE_DEBUG) || _DEBUG
 #define DXR_LOG_DEBUG(msg) OutputDebugString(msg)
 #define DXR_ASSERT(cond, msg)                                                                                          \
     if (!(cond))                                                                                                       \

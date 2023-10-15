@@ -59,6 +59,10 @@ namespace DXR
         void SetPool(DMA::Pool* pool) { mPool = pool; }
 
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@ Utilities @@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@ Accel Struct @@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -70,6 +74,30 @@ namespace DXR
         /// acceleration structure.
         /// @return The new acceleration structure.
         ComPtr<DMA::Allocation> AllocateBottomAccelerationStructure(BottomAccelDesc& desc);
+
+        /// @brief Build a bottom level acceleration structure
+        void BuildAccelerationStructure(IAccelDesc& desc, ComPtr<ID3D12GraphicsCommandList4>& cmdList);
+
+        /// @brief Allocate a scratch buffer for building a bottom level acceleration structure
+        /// @param desc The description of the acceleration structure which will be assigned a region of the scratch
+        /// buffer
+        /// @param alloc The scratch buffer to use
+        void SubAssignScratchBuffer(std::vector<BottomAccelDesc>& descs, ComPtr<DMA::Allocation>& alloc);
+
+        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures and assign regions
+        /// to each acceleration structure. This is a convenience function that calls GetRequiredScratchBufferSize(...),
+        /// AllocateScratchBuffer(...) and SubAssignScratchBuffer(...) in that order.
+        /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch
+        /// buffer
+        ComPtr<DMA::Allocation> AllocateAndAssignScratchBuffer(std::vector<BottomAccelDesc>& descs);
+
+        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures
+        /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch
+        UINT64 GetRequiredScratchBufferSize(std::vector<BottomAccelDesc>& descs);
+
+        /// @brief Allocate a scratch buffer of the given size
+        /// @param size The size of the scratch buffer
+        ComPtr<DMA::Allocation> AllocateScratchBuffer(UINT64 size);
 
         /// @brief Allocate a resource
         /// @param desc The description of the resource
