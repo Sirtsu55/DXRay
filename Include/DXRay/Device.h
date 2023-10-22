@@ -49,6 +49,10 @@ namespace DXR
         /// @return The allocator
         ComPtr<DMA::Allocator> GetAllocator() const { return mAllocator; }
 
+        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures
+        /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch
+        UINT64 GetRequiredScratchBufferSize(std::vector<AccelerationStructureDesc>& descs);
+
         /// @brief Get the pool
         /// @return The pool, or null if no pool is set
         DMA::Pool* GetPool() const { return mPool; }
@@ -62,43 +66,6 @@ namespace DXR
         // @@@@@@@@@@@@@@@@@@@@@@ Utilities @@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        // @@@@@@@@@@@@@@@@@@@@@ Accel Struct @@@@@@@@@@@@@@@@@@@@@
-        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-        /// @brief Allocate a new bottom level acceleration structure
-        /// @param desc The description of the acceleration structure
-
-        /// @brief Allocate a new bottom level acceleration structure
-        /// @param desc The description of the acceleration structure. Will be modified and used when building the
-        /// acceleration structure.
-        /// @return The new acceleration structure.
-        ComPtr<DMA::Allocation> AllocateBottomAccelerationStructure(BottomAccelDesc& desc);
-
-        /// @brief Build a bottom level acceleration structure
-        void BuildAccelerationStructure(IAccelDesc& desc, ComPtr<ID3D12GraphicsCommandList4>& cmdList);
-
-        /// @brief Allocate a scratch buffer for building a bottom level acceleration structure
-        /// @param desc The description of the acceleration structure which will be assigned a region of the scratch
-        /// buffer
-        /// @param alloc The scratch buffer to use
-        void SubAssignScratchBuffer(std::vector<BottomAccelDesc>& descs, ComPtr<DMA::Allocation>& alloc);
-
-        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures and assign regions
-        /// to each acceleration structure. This is a convenience function that calls GetRequiredScratchBufferSize(...),
-        /// AllocateScratchBuffer(...) and SubAssignScratchBuffer(...) in that order.
-        /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch
-        /// buffer
-        ComPtr<DMA::Allocation> AllocateAndAssignScratchBuffer(std::vector<BottomAccelDesc>& descs);
-
-        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures
-        /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch
-        UINT64 GetRequiredScratchBufferSize(std::vector<BottomAccelDesc>& descs);
-
-        /// @brief Allocate a scratch buffer of the given size
-        /// @param size The size of the scratch buffer
-        ComPtr<DMA::Allocation> AllocateScratchBuffer(UINT64 size);
-
         /// @brief Allocate a resource
         /// @param desc The description of the resource
         /// @param state The initial state of the resource
@@ -110,6 +77,64 @@ namespace DXR
                                                  D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_DEFAULT,
                                                  DMA::ALLOCATION_FLAGS allocFlags = DMA::ALLOCATION_FLAG_NONE,
                                                  D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE);
+
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@ Accel Struct @@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+        /// @brief Allocate a new acceleration structure. When allocating a bottom level acceleration structure,
+        /// the returned allocation's GPU virtual address is used for instance description acceleration structure field.
+        /// @param desc The description of the acceleration structure. Will be modified and used when building the
+        /// acceleration structure.
+        /// @return The new acceleration structure.
+        ComPtr<DMA::Allocation> AllocateAccelerationStructure(AccelerationStructureDesc& desc);
+
+        /// @brief Build an acceleration structure
+        /// @param desc The description of the acceleration structure to build
+        /// @param cmdList The command list to use for building
+        void BuildAccelerationStructure(AccelerationStructureDesc& desc, ComPtr<ID3D12GraphicsCommandList4>& cmdList);
+
+        /// @brief Allocate a scratch buffer for building a bottom level acceleration structure
+        /// @param desc The description of the acceleration structure which will be assigned a region of the scratch
+        /// buffer
+        /// @param alloc The scratch buffer to use
+        void AssignScratchBuffer(std::vector<AccelerationStructureDesc>& descs, ComPtr<DMA::Allocation>& alloc);
+
+        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures and assign regions
+        /// to each acceleration structure. This is a convenience function that calls GetRequiredScratchBufferSize(...),
+        /// AllocateScratchBuffer(...) and AssignScratchBuffer(...) in that order.
+        /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch
+        /// buffer
+        /// @return The new scratch buffer
+        ComPtr<DMA::Allocation> AllocateAndAssignScratchBuffer(std::vector<AccelerationStructureDesc>& descs);
+
+        /// @brief Allocate a scratch buffer of the given size
+        /// @param size The size of the scratch buffer
+        /// @return The new scratch buffer
+        ComPtr<DMA::Allocation> AllocateScratchBuffer(UINT64 size);
+
+        /// @brief Allocate a instance buffer for a top level acceleration structure. These must then be filled with
+        /// valid instance descriptions when building the acceleration structure. Can be discarded after building, but
+        /// better if reused every frame.
+        /// @param numInstances The number of instances to allocate space for
+        /// @return The new instance buffer
+        ComPtr<DMA::Allocation> AllocateInstanceBuffer(UINT64 numInstances);
+
+        /// @brief Assign multiple instance descriptions to a buffer
+        /// @param instanceDescs The descriptions of the instances
+        /// @param dest The destination buffer
+        /// @param index The index of the first instance in the instance buffer
+        void AssignInstanceDescs(const std::vector<D3D12_RAYTRACING_INSTANCE_DESC>& instanceDescs,
+                                 ComPtr<DMA::Allocation>& dest, UINT64 index = 0);
+
+    private: // Internal methods
+        /// @brief Allocate a bottom level acceleration structure, used by AllocateAccelerationStructure(...) if the
+        /// type is bottom level
+        ComPtr<DMA::Allocation> InternalAllocateBottomAccelerationStructure(AccelerationStructureDesc& desc);
+
+        /// @brief Allocate a top level acceleration structure, used by AllocateAccelerationStructure(...) if the type
+        /// is top level
+        ComPtr<DMA::Allocation> InternalAllocateTopAccelerationStructure(AccelerationStructureDesc& desc);
 
     private:
         /// @brief The D3D12 device

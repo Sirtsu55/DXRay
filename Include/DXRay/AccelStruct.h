@@ -4,15 +4,26 @@
 
 namespace DXR
 {
-
-    struct IAccelDesc
+    /// @brief A description of an acceleration structure. Top or bottom.
+    struct AccelerationStructureDesc
     {
     public: // Methods
+            // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@ Common Acceleration Structure Info @@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
         /// @brief Get the prebuild info for the acceleration structure.
         const D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO& GetPrebuildInfo() const { return PrebuildInfo; }
 
         /// @brief Get the build description for the acceleration structure.
         const D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC& GetBuildDesc() const { return BuildDesc; }
+
+        /// @brief Get the size of the scratch buffer needed to build the acceleration structure.
+        UINT64 GetScratchBufferSize() const { return PrebuildInfo.ScratchDataSizeInBytes; }
+
+        /// @brief Get the type of the acceleration structure.
+        /// @return The type of the acceleration structure that will be built.
+        D3D12_RAYTRACING_ACCELERATION_STRUCTURE_TYPE GetType() const { return BuildDesc.Inputs.Type; }
 
         /// @brief Set the scratch buffer for the acceleration structure.
         void SetScratchBuffer(D3D12_GPU_VIRTUAL_ADDRESS scratchBuffer)
@@ -20,39 +31,49 @@ namespace DXR
             BuildDesc.ScratchAccelerationStructureData = scratchBuffer;
         }
 
-        /// @brief Get the size of the scratch buffer needed to build the acceleration structure.
-        UINT64 GetScratchBufferSize() const { return PrebuildInfo.ScratchDataSizeInBytes; }
-
         /// @brief Check if the acceleration structure has been allocated.
-        /// Checks if BuildDesc.Inputs.NumDescs > 0, which is set by AllocateBottomAccelerationStructure or
-        /// AllocateTopAccelerationStructure.
+        /// Checks if BuildDesc.Inputs.NumDescs > 0, which is set by AllocateAccelerationStructure
         bool HasBeenAllocated() const { return BuildDesc.Inputs.NumDescs > 0; }
 
     public: // Members
-        /// @brief The flags to use when building the acceleration structure.
-        /// These must be set before calling AllocateTopAccelerationStructure or AllocateBottomAccelerationStructure,
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@ Common Acceleration Structure Info @@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+        /// @brief TLAS & BLAS; The flags to use when building the acceleration structure.
+        /// These must be set before calling AllocateAccelerationStructure
         /// because they are used to compute the prebuild info.
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS Flags =
             D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
 
-        /// ------------------------------------------------------------------------
-        /// ------------------ Bottom Level Acceleration Structure -----------------
-        /// ------------------------------------------------------------------------
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@ Bottom Level Acceleration Structure @@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-        /// @brief The geometry to create the acceleration structure for.
+        /// @brief BLAS ONLY; The geometry to create the acceleration structure for.
         /// This or pGeometries must be set for BLAS building. No need to fill both.
         /// The pointers in this vector must be valid until the acceleration structure is built.
         std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> Geometries = {};
 
-        /// @brief The geometry to create the acceleration structure for, expressed as pointers.
+        /// @brief BLAS ONLY; The geometry to create the acceleration structure for, expressed as pointers.
         /// This or Geometries must be set for BLAS building. No need to fill both.
         std::vector<D3D12_RAYTRACING_GEOMETRY_DESC*> pGeometries = {};
 
-        /// ------------------------------------------------------------------------
-        /// ------------------- Top Level Acceleration Structure -------------------
-        /// ------------------------------------------------------------------------
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@ Top Level Acceleration Structure @@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-    private:
+        /// @brief TLAS ONLY; The address of the instance descriptions that lie in GPU memory. This assumes that the
+        /// address points to an array of D3D12_RAYTRACING_INSTANCE_DESC structures and not an array of pointers to
+        /// D3D12_RAYTRACING_INSTANCE_DESC structures.
+        /// For TLAS builds, this must be set and the memory must be valid when building the acceleration structure.
+        D3D12_GPU_VIRTUAL_ADDRESS vpInstanceDescs = 0;
+
+        /// @brief TLAS ONLY; The number of instance descriptions.
+        /// For TLAS builds, this must be set and the memory must be valid when building the acceleration structure.
+        UINT64 NumInstanceDescs = 0;
+
+    private: // Members, These are not meant to be filled by the user, thus private, but they can be read by the user
         /// @brief The prebuild info for the acceleration structure.
         D3D12_RAYTRACING_ACCELERATION_STRUCTURE_PREBUILD_INFO PrebuildInfo = {};
 
