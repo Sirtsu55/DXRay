@@ -1,13 +1,12 @@
-
-
-
 # Visual Studio
 out/
 build/
 .vs/
 .vscode/
-
 CppProperties.json
+
+# Exclude Agility SDK that is downloaded by CMake
+Deps/AgilitySDK
 
 # Prerequisites
 *.d

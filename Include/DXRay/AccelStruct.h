@@ -8,8 +8,8 @@ namespace DXR
     struct AccelerationStructureDesc
     {
     public: // Methods
-            // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        // @@@@@@@@@@@@@@@@@@ Common Acceleration Structure Info @@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@ Getters & Setters @@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
         /// @brief Get the prebuild info for the acceleration structure.
@@ -32,8 +32,7 @@ namespace DXR
         }
 
         /// @brief Check if the acceleration structure has been allocated.
-        /// Checks if BuildDesc.Inputs.NumDescs > 0, which is set by AllocateAccelerationStructure
-        bool HasBeenAllocated() const { return BuildDesc.Inputs.NumDescs > 0; }
+        bool HasBeenAllocated() const { return BuildDesc.DestAccelerationStructureData != 0; }
 
     public: // Members
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -67,6 +66,7 @@ namespace DXR
         /// address points to an array of D3D12_RAYTRACING_INSTANCE_DESC structures and not an array of pointers to
         /// D3D12_RAYTRACING_INSTANCE_DESC structures.
         /// For TLAS builds, this must be set and the memory must be valid when building the acceleration structure.
+        /// @note This is the GPU virtual address, hence the "vp" prefix for "virtual pointer".
         D3D12_GPU_VIRTUAL_ADDRESS vpInstanceDescs = 0;
 
         /// @brief TLAS ONLY; The number of instance descriptions.

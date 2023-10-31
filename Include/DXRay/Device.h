@@ -50,6 +50,7 @@ namespace DXR
         ComPtr<DMA::Allocator> GetAllocator() const { return mAllocator; }
 
         /// @brief Allocate a big scratch buffer that will be used for all acceleration structures
+        /// This is the recommended function to call, because it will take into account the alignment requirements
         /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch
         UINT64 GetRequiredScratchBufferSize(std::vector<AccelerationStructureDesc>& descs);
 
@@ -94,10 +95,12 @@ namespace DXR
         /// @param cmdList The command list to use for building
         void BuildAccelerationStructure(AccelerationStructureDesc& desc, ComPtr<ID3D12GraphicsCommandList4>& cmdList);
 
-        /// @brief Allocate a scratch buffer for building a bottom level acceleration structure
+        /// @brief Allocate a scratch buffer for building a bottom level acceleration structure. It will take into
+        /// account the alignment requirements.
         /// @param desc The description of the acceleration structure which will be assigned a region of the scratch
         /// buffer
-        /// @param alloc The scratch buffer to use
+        /// @param alloc The scratch buffer to use. This allocation should be of the size returned by
+        /// GetRequiredScratchBufferSize(...) to ensure that it is large enough.
         void AssignScratchBuffer(std::vector<AccelerationStructureDesc>& descs, ComPtr<DMA::Allocation>& alloc);
 
         /// @brief Allocate a big scratch buffer that will be used for all acceleration structures and assign regions

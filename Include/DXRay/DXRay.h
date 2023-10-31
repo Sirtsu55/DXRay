@@ -21,6 +21,9 @@
 #include "DXRay/Device.h"
 #include "DXRay/AccelStruct.h"
 
+// Helper Defines
+#define DXR_ALIGN(num, alignment) (((num) + alignment - 1) & ~(alignment - 1))
+
 // Enable debugging by default in debug builds, disable in release builds unless explicitly enabled
 #if defined(DXR_ENABLE_DEBUG) || _DEBUG
 #define DXR_LOG_DEBUG(msg) OutputDebugString(msg)

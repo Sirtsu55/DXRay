@@ -13,6 +13,7 @@ namespace DXR
             desc.Flags = DMA::ALLOCATOR_FLAG_NONE;
             DXR_THROW_FAILED(DMA::CreateAllocator(&desc, &mAllocator));
         }
+
     }
 
     Device::~Device()

@@ -6,7 +6,12 @@ namespace DXR
     {
         UINT64 size = 0;
 
-        for (auto& desc : descs) { size += desc.GetScratchBufferSize(); }
+        for (auto& desc : descs)
+        {
+            size += desc.GetScratchBufferSize();
+            // Always align the size to the required alignment
+            size = DXR_ALIGN(size, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT);
+        }
 
         return size;
     }
@@ -64,7 +69,10 @@ namespace DXR
 
     ComPtr<DMA::Allocation> Device::InternalAllocateTopAccelerationStructure(AccelerationStructureDesc& desc)
     {
+        // desc.vpInstanceDescs can be set at a later stage, but for now we require it to be set, to avoid unwanted
+        // errors
         DXR_ASSERT(desc.vpInstanceDescs != 0, "No virtual address provided for top level acceleration structure");
+        DXR_ASSERT(desc.NumInstanceDescs > 0, "Top level acceleration structure has no instances");
 
         // Reference to the inputs for shorter code
         auto& inputs = desc.BuildDesc.Inputs;
@@ -96,7 +104,7 @@ namespace DXR
     {
         DXR_ASSERT(desc.HasBeenAllocated(), "Acceleration structure has not been allocated");
 
-        // TODO: Retrieve the prebuild info from the acceleration structure
+        // TODO: Retrieve the postbuild info from the acceleration structure
 
         cmdList->BuildRaytracingAccelerationStructure(&desc.BuildDesc, 0, nullptr);
     }
@@ -110,7 +118,8 @@ namespace DXR
         for (auto& desc : descs)
         {
             desc.BuildDesc.ScratchAccelerationStructureData = baseAddress + offset;
-            offset += desc.PrebuildInfo.ScratchDataSizeInBytes;
+            offset += desc.GetScratchBufferSize();
+            offset = DXR_ALIGN(offset, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT);
 
             if (offset > maxSize)
                 DXR_ASSERT(false, "Scratch buffer too small");
@@ -139,11 +148,11 @@ namespace DXR
         D3D12_RESOURCE_DESC resDesc = CD3DX12_RESOURCE_DESC::Buffer(
             numInstances * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), D3D12_RESOURCE_FLAG_NONE);
 
-        return AllocateResource(resDesc, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+        return AllocateResource(resDesc, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_HEAP_TYPE_GPU_UPLOAD);
     }
 
-    void AssignInstanceDescs(const std::vector<D3D12_RAYTRACING_INSTANCE_DESC>& instanceDescs,
-                             ComPtr<DMA::Allocation>& dest, UINT64 index = 0)
+    void Device::AssignInstanceDescs(const std::vector<D3D12_RAYTRACING_INSTANCE_DESC>& instanceDescs,
+                                     ComPtr<DMA::Allocation>& dest, UINT64 index)
     {
         DXR_ASSERT((dest->GetSize() / sizeof(D3D12_RAYTRACING_INSTANCE_DESC)) >= (instanceDescs.size() - index),
                    "Instance buffer too small");
