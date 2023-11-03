@@ -21,6 +21,18 @@
 #include "DXRay/Device.h"
 #include "DXRay/AccelStruct.h"
 
+// Use the Agility SDK Binary Version of D3D12
+#define DXRAY_AGILITY_SDK_IMPLEMENTATION                                                                               \
+    extern "C"                                                                                                         \
+    {                                                                                                                  \
+        __declspec(dllexport) extern const UINT D3D12SDKVersion = 711;                                                 \
+    }                                                                                                                  \
+                                                                                                                       \
+    extern "C"                                                                                                         \
+    {                                                                                                                  \
+        __declspec(dllexport) extern const char8_t* D3D12SDKPath = u8"AgilitySDK\\";                                   \
+    }
+
 // Helper Defines
 #define DXR_ALIGN(num, alignment) (((num) + alignment - 1) & ~(alignment - 1))
 

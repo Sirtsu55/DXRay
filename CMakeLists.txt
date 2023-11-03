@@ -15,19 +15,22 @@ if(NOT EXISTS "${AGILITY_SDK_DIR}")
 	file(REMOVE "${PROJECT_SOURCE_DIR}/Deps/AgilitySDK.zip")
 endif()
 
-# Set D3D12MA Agility SDK Variables
+# Set D3D12MA Agility SDK Variables. For some reason, you have to run CMake twice to get the variables to work
 set(D3D12MA_AGILITY_SDK_DIRECTORY  ${AGILITY_SDK_DIR})
-set(D3D12MA_AGILITY_SDK_PREVIEW ON)
-set(D3D12MA_OPTIONS16_SUPPORTED ON)
+set(D3D12MA_AGILITY_SDK_PREVIEW ON CACHE BOOL "Use Agility SDK Preview")
+set(D3D12MA_OPTIONS16_SUPPORTED ON CACHE BOOL "Use Agility SDK for GPU Upload Heaps")
 
 # Add Dependencies
-add_subdirectory("${PROJECT_SOURCE_DIR}/Deps/DirectX-Headers")
 add_subdirectory("${PROJECT_SOURCE_DIR}/Deps/D3D12MemoryAllocator")
+add_subdirectory("${PROJECT_SOURCE_DIR}/Deps/DirectX-Headers")
 
 # Add the Library
 file(GLOB_RECURSE DXRaySOURCES "${PROJECT_SOURCE_DIR}/Source/*.cpp")
 
 add_library(DXRay STATIC ${DXRaySOURCES})
+
+# Set C++ Standard
+set_target_properties(DXRay PROPERTIES CXX_STANDARD 20)
 
 # Precompiled Headers
 target_precompile_headers(DXRay PRIVATE "${PROJECT_SOURCE_DIR}/Include/DXRay/DXRay.h")
@@ -41,3 +44,11 @@ target_include_directories(DXRay PUBLIC
 	"${PROJECT_SOURCE_DIR}/Deps/DirectX-Headers/include"
 	"${PROJECT_SOURCE_DIR}/Deps/D3D12MemoryAllocator/include"
 )
+
+# If Agility SDK doesn't exist in binary directory, then copy the binaries from source directory
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/Deps/AgilitySDK")
+	add_custom_command(TARGET DXRay POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_directory
+	"${PROJECT_SOURCE_DIR}/Deps/AgilitySDK/build/native/bin/x64" 
+	"${CMAKE_BINARY_DIR}/AgilitySDK")
+endif()
