@@ -13,11 +13,18 @@ namespace DXR
             desc.Flags = DMA::ALLOCATOR_FLAG_NONE;
             DXR_THROW_FAILED(DMA::CreateAllocator(&desc, &mAllocator));
         }
-
     }
 
     Device::~Device()
     {
+    }
+
+    void* Device::MapAllocationForWrite(ComPtr<DMA::Allocation>& res)
+    {
+        void* mapped;
+        CD3DX12_RANGE readRange(0, 0);
+        DXR_THROW_FAILED(res->GetResource()->Map(0, &readRange, &mapped));
+        return mapped;
     }
 
     ComPtr<DMA::Allocation> Device::AllocateResource(const D3D12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES state,

@@ -1,5 +1,6 @@
 #pragma once
 #include "DXRay/AccelStruct.h"
+#include "DXRay/RayTracingPipeline.h"
 
 namespace DXR
 {
@@ -37,9 +38,9 @@ namespace DXR
         Device& operator=(Device&&) = delete;
 
     public:
-        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        // @@@@@@@@@@@@@@@@@@ Getters & Setters @@@@@@@@@@@@@@@@@@@
-        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@ Getters & Setters @@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
         /// @brief Get the D3D12 device
         /// @return The D3D12 device
@@ -63,9 +64,9 @@ namespace DXR
         /// @note This will override the existing pool if one is already set
         void SetPool(DMA::Pool* pool) { mPool = pool; }
 
-        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        // @@@@@@@@@@@@@@@@@@@@@@ Utilities @@@@@@@@@@@@@@@@@@@@@@@
-        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Utilities @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
         /// @brief Allocate a resource
         /// @param desc The description of the resource
@@ -79,9 +80,15 @@ namespace DXR
                                                  DMA::ALLOCATION_FLAGS allocFlags = DMA::ALLOCATION_FLAG_NONE,
                                                  D3D12_HEAP_FLAGS heapFlags = D3D12_HEAP_FLAG_NONE);
 
-        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-        // @@@@@@@@@@@@@@@@@@@@@ Accel Struct @@@@@@@@@@@@@@@@@@@@@
-        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        /// @brief Map a resource for only writing. It is always recommended to map persistently if the resource is
+        /// located in CPU visible memory to avoid Map/Unmap overhead.
+        /// @param resource The resource to map
+        /// @return The mapped pointer
+        void* MapAllocationForWrite(ComPtr<DMA::Allocation>& res);
+
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Accel Struct @@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
         /// @brief Allocate a new acceleration structure. When allocating a bottom level acceleration structure,
         /// the returned allocation's GPU virtual address is used for instance description acceleration structure field.
@@ -121,14 +128,17 @@ namespace DXR
         /// better if reused every frame.
         /// @param numInstances The number of instances to allocate space for
         /// @return The new instance buffer
+        /// @note This function will allocate the buffer in GPU_UPLOAD heap type, so it can be directly copied to.
+        /// This means that the system should support ReBAR, otherwise the allocation will fail. This is why AgilitySDK
+        /// is downloaded with the project, to ensure that the system supports ReBAR. If you want to use a different
+        /// heap type, use AllocateResource(...) instead and manage the copy yourself.
         ComPtr<DMA::Allocation> AllocateInstanceBuffer(UINT64 numInstances);
 
-        /// @brief Assign multiple instance descriptions to a buffer
-        /// @param instanceDescs The descriptions of the instances
-        /// @param dest The destination buffer
-        /// @param index The index of the first instance in the instance buffer
-        void AssignInstanceDescs(const std::vector<D3D12_RAYTRACING_INSTANCE_DESC>& instanceDescs,
-                                 ComPtr<DMA::Allocation>& dest, UINT64 index = 0);
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@ Ray Tracing Pipeline @@@@@@@@@@@@@@@@@@@@@@@@@
+        // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+        RayTracingPipeline CreateRayTracingPipeline(const RayTracingPipelineDesc& desc);
 
     private: // Internal methods
         /// @brief Allocate a bottom level acceleration structure, used by AllocateAccelerationStructure(...) if the

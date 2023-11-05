@@ -151,22 +151,4 @@ namespace DXR
         return AllocateResource(resDesc, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_HEAP_TYPE_GPU_UPLOAD);
     }
 
-    void Device::AssignInstanceDescs(const std::vector<D3D12_RAYTRACING_INSTANCE_DESC>& instanceDescs,
-                                     ComPtr<DMA::Allocation>& dest, UINT64 index)
-    {
-        DXR_ASSERT((dest->GetSize() / sizeof(D3D12_RAYTRACING_INSTANCE_DESC)) >= (instanceDescs.size() - index),
-                   "Instance buffer too small");
-
-        void* mapped;
-        CD3DX12_RANGE readRange(0, 0);
-        DXR_THROW_FAILED(dest->GetResource()->Map(0, &readRange, &mapped));
-
-        DXR_ASSERT(mapped != nullptr, "Failed to map instance buffer");
-
-        memcpy(reinterpret_cast<D3D12_RAYTRACING_INSTANCE_DESC*>(mapped) + index, instanceDescs.data(),
-               instanceDescs.size() * sizeof(D3D12_RAYTRACING_INSTANCE_DESC));
-
-        dest->GetResource()->Unmap(0, nullptr);
-    }
-
 } // namespace DXR

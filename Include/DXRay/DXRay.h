@@ -20,6 +20,7 @@
 // All DXRay headers
 #include "DXRay/Device.h"
 #include "DXRay/AccelStruct.h"
+#include "DXRay/RaytracingPipeline.h"
 
 // Use the Agility SDK Binary Version of D3D12
 #define DXRAY_AGILITY_SDK_IMPLEMENTATION                                                                               \
