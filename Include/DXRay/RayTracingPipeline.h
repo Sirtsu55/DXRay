@@ -4,15 +4,11 @@ namespace DXR
 {
     using Microsoft::WRL::ComPtr;
 
-    struct RayTracingPipelineDesc
+    struct PipelineDesc
     {
         UINT MaxRecursionDepth = 1;
         UINT MaxAttributeSizeInBytes = D3D12_RAYTRACING_MAX_ATTRIBUTE_SIZE_IN_BYTES;
         UINT MaxPayloadSizeInBytes = 256;
-
-        /// @brief Ray Tracing state object config flags, D3D12_STATE_OBJECT_FLAG_ALLOW_STATE_OBJECT_ADDITIONS will
-        /// always be set, due to the way DXRay works.
-        D3D12_STATE_OBJECT_FLAGS StateObjectFlags = D3D12_STATE_OBJECT_FLAG_NONE;
 
         /// @brief Ray Tracing pipeline config flags.
         D3D12_RAYTRACING_PIPELINE_FLAGS PipelineFlags = D3D12_RAYTRACING_PIPELINE_FLAG_NONE;
@@ -69,25 +65,26 @@ namespace DXR
     };
 
     /// @brief A Collection state object that can be incrementally added to the RayTracingPipeline.
-    /// It is useful when you don't have all the shaders at once and don't want to recompile the whole pipeline.
-    /// D3D12_STATE_SUBOBJECT_TYPE_STATE_OBJECT_CONFIG, D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG and
-    /// D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG will be inherited from the RayTracingPipeline, that this
-    /// will link to, which is the whole point of this class.
+    /// All of the objects that are added to this MUST be alive until this object is alive, since it doesn't store a
+    /// hard reference to them. It is useful when you don't have all the shaders at once and don't want to recompile the
+    /// whole pipeline. D3D12_STATE_SUBOBJECT_TYPE_STATE_OBJECT_CONFIG,
+    /// D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG and D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG
+    /// will be inherited from the RayTracingPipeline, that this will link to, which is the whole point of this class.
     /// @note This doesn't support Subobject Associations, if there is a need for it, Open an issue.
-    struct PipelineStateCollection
+    struct StateCollection
     {
     public: // Constructors
             /// @brief Default constructor.
-        PipelineStateCollection() = default;
+        StateCollection() = default;
 
-        ~PipelineStateCollection()
+        ~StateCollection()
         {
             for (auto& subobjectData : mSubobjectData) { delete subobjectData; }
         }
 
     public: // Methods
         /// @brief Add a Shader Library to the collection. The user MUST ensure that the shader library is alive
-        /// when the PipelineStateCollection is alive.
+        /// when the StateCollection is alive.
         /// @param shaderLibrary The shader library to add.
         /// @return The index of the shader library in the collection.
         UINT32 AddShaderLibrary(ShaderLibrary& shaderLibrary)
@@ -99,7 +96,7 @@ namespace DXR
 
             D3D12_STATE_SUBOBJECT subobject = {};
             subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
-            subobject.pDesc = &libraryDesc;
+            subobject.pDesc = libraryDesc;
 
             mSubobjects.push_back(subobject);
             mSubobjectData.push_back(libraryDesc);
@@ -110,14 +107,14 @@ namespace DXR
         /// @brief Add a subobject to the collection.
         /// @param rootSignature The root signature to add.
         /// @return The index of the root signature in the collection.
-        UINT32 AddGlobalRootSignature(ComPtr<ID3D12RootSignature> rootSignature)
+        UINT32 AddGlobalRootSignature(ComPtr<ID3D12RootSignature>& rootSignature)
         {
             D3D12_GLOBAL_ROOT_SIGNATURE* globalRootSignature = new D3D12_GLOBAL_ROOT_SIGNATURE();
             globalRootSignature->pGlobalRootSignature = rootSignature.Get();
 
             D3D12_STATE_SUBOBJECT subobject = {};
             subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
-            subobject.pDesc = &globalRootSignature;
+            subobject.pDesc = globalRootSignature;
 
             mSubobjects.push_back(subobject);
             mSubobjectData.push_back(globalRootSignature);
@@ -128,14 +125,14 @@ namespace DXR
         /// @brief Add a subobject to the collection.
         /// @param rootSignature The root signature to add.
         /// @return The index of the root signature in the collection.
-        UINT32 AddLocalRootSignature(ComPtr<ID3D12RootSignature> rootSignature)
+        UINT32 AddLocalRootSignature(ComPtr<ID3D12RootSignature>& rootSignature)
         {
             D3D12_LOCAL_ROOT_SIGNATURE* localRootSignature = new D3D12_LOCAL_ROOT_SIGNATURE();
             localRootSignature->pLocalRootSignature = rootSignature.Get();
 
             D3D12_STATE_SUBOBJECT subobject = {};
             subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_LOCAL_ROOT_SIGNATURE;
-            subobject.pDesc = &localRootSignature;
+            subobject.pDesc = localRootSignature;
 
             mSubobjects.push_back(subobject);
             mSubobjectData.push_back(localRootSignature);
@@ -162,7 +159,7 @@ namespace DXR
 
             D3D12_STATE_SUBOBJECT subobject = {};
             subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
-            subobject.pDesc = &hitGroupDesc;
+            subobject.pDesc = hitGroupDesc;
 
             mSubobjects.push_back(subobject);
             mSubobjectData.push_back(hitGroupDesc);
@@ -170,13 +167,74 @@ namespace DXR
             return static_cast<UINT32>(mSubobjects.size() - 1);
         }
 
+        /// @brief Add an association to the collection.
+        /// @param subobjectIndex The index of the subobject to associate.
+        /// @param associations The associations to add.
+        /// @param copy If true, the associations will be copied, otherwise they will be referenced.
+        /// If referenced, the user MUST ensure that the associations are AND the strings in the vector are alive when
+        /// the StateCollection is compiled.
+        /// @return The index of the association in the collection.
+        UINT32 AddAssociations(UINT32 subobjectIndex, std::vector<LPCWSTR> associations, bool copy = true)
+        {
+            D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION* association = new D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION();
+            association->NumExports = static_cast<UINT>(associations.size());
+            association->pExports = associations.data(); // modified if copy is true
+            association->pSubobjectToAssociate = &mSubobjects[subobjectIndex];
+
+            D3D12_STATE_SUBOBJECT subobject = {};
+            subobject.Type = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+            subobject.pDesc = association;
+
+            // If we are copying, we need to copy the associations, so that the user can delete them.
+            if (copy)
+            {
+                // Copy the associations, so that the user can delete them.
+                LPCWSTR* associationsCopy = new LPCWSTR[associations.size()];
+
+                // Get the size of all the strings.
+                UINT32 size = 0;
+                for (auto& association : associations) { size += static_cast<UINT32>(wcslen(association)); }
+
+                // Copy the strings.
+                WCHAR* associationsCopyPtr = new WCHAR[size + 1];
+
+                UINT32 offset = 0;
+                for (int i = 0; i < associations.size(); i++)
+                {
+                    wcscpy_s(associationsCopyPtr + offset, size + 1 - offset, associations[i]);
+                    associationsCopy[i] = associationsCopyPtr + offset;
+                    offset += static_cast<UINT32>(wcslen(associations[i])) + 1;
+                }
+
+                mSubobjectData.push_back(associationsCopyPtr);
+                mSubobjectData.push_back(associationsCopy);
+
+                // Modify the association to point to the copied strings.
+                association->pExports = associationsCopy;
+            }
+
+            mSubobjects.push_back(subobject);
+            mSubobjectData.push_back(association);
+
+            return static_cast<UINT32>(mSubobjects.size() - 1);
+        }
+
+    public: // Members
+        D3D12_STATE_OBJECT_FLAGS StateObjectFlags = D3D12_STATE_OBJECT_FLAG_NONE;
+
     private: // Members
         /// @brief The subobjects that compose the collection.
         std::vector<D3D12_STATE_SUBOBJECT> mSubobjects = {};
 
         /// @brief The subobject data that are pointed by the subobjects.
-        /// Maps 1:1 with mSubobjects, so the index of the subobject is the index of the data.
+        /// Does not map 1:1 with mSubobjects
         std::vector<void*> mSubobjectData = {};
+
+        /// @brief The collection state object.
+        ComPtr<ID3D12StateObject> mStateObject = nullptr;
+
+        // Friend Device, so that it can access the subobjects.
+        friend class Device;
     };
 
     /// @brief A description of a ray tracing pipeline. This can be used to launch a ray tracing.
@@ -192,7 +250,7 @@ namespace DXR
         ComPtr<ID3D12StateObject> mPipelineStateObject = nullptr;
 
         /// @brief The pipeline state object description.
-        D3D12_STATE_OBJECT_DESC mPipelineStateDesc = {};
+        PipelineDesc mPipelineStateDesc = {};
 
         // Friend Device, so that it can modify the pipeline state object.
         friend class Device;

@@ -17,6 +17,10 @@
 // D3D12 Memory Allocator
 #include <d3d12memalloc.h>
 
+// STL Headers
+#include <unordered_map>
+#include <vector>
+
 // All DXRay headers
 #include "DXRay/Device.h"
 #include "DXRay/AccelStruct.h"

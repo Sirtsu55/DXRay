@@ -2,20 +2,20 @@
 #include "DXRay/AccelStruct.h"
 #include "DXRay/RayTracingPipeline.h"
 
+// Namespace is too long to type out, so shorten it to DMA: |D|3D12 |M|emory |A|llocator
+namespace DMA = D3D12MA;
+
 namespace DXR
 {
     // Ease of use of ComPtr
     using Microsoft::WRL::ComPtr;
-
-    // Namespace is too long to type out, so shorten it to DMA: |D|3D12 |M|emory |A|llocator
-    namespace DMA = D3D12MA;
 
     /// @brief A wrapper around the D3D12 to use DXR.
     class Device
     {
         /// @brief Alias for the D3D12 device type so it's easier to change later
         /// if new versions are released
-        using DXRDevice = ID3D12Device5;
+        using DXRDevice = ID3D12Device7;
         using DXRAdapter = IDXGIAdapter;
 
     public:
@@ -138,7 +138,24 @@ namespace DXR
         // @@@@@@@@@@@@@@@@@@@@@@@@@ Ray Tracing Pipeline @@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-        RayTracingPipeline CreateRayTracingPipeline(const RayTracingPipelineDesc& desc);
+        /// @brief Create a ray tracing pipeline
+        /// @param desc The description of the pipeline, modifiable even after construction, but not implemented yet.
+        /// Open an issue if needed
+        RayTracingPipeline CreateRayTracingPipeline(const PipelineDesc& desc);
+
+        /// @brief Create a StateCollection, You should call Add... to add all the subobjects before calling this
+        /// function. This function will compile all the subobjects to create a state collection that can be used to
+        /// expand a pipeline. This can take some time, so it is recommended to do this on a separate thread if
+        /// performance is critical.
+        /// @return The new StateCollection
+        void CreateStateCollection(StateCollection& collection);
+
+        /// @brief Expand a ray tracing pipeline with the given collection. Everything will be exported from the
+        /// collection and added to the pipeline. If StateCollection isn't compiled, it will be compiled on this thread.
+        /// @param pipeline The pipeline to expand, will be modified and replaced with a new RTPSO
+        /// @param collection The collection to expand with. This can be precompiled or not.
+        /// If not compiled, the compilation process happens on this thread and this function may take some time.
+        void ExpandRayTracingPipeline(RayTracingPipeline& pipeline, StateCollection& collection);
 
     private: // Internal methods
         /// @brief Allocate a bottom level acceleration structure, used by AllocateAccelerationStructure(...) if the
