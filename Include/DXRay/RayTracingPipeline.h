@@ -70,11 +70,12 @@ namespace DXR
     /// whole pipeline. D3D12_STATE_SUBOBJECT_TYPE_STATE_OBJECT_CONFIG,
     /// D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG and D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG
     /// will be inherited from the RayTracingPipeline, that this will link to, which is the whole point of this class.
-    /// @note This doesn't support Subobject Associations, if there is a need for it, Open an issue.
+    /// Tailored for effieciency and minimizing allocations. Unlike CD3DX12_STATE_OBJECT_DESC, this doesn't use
+    /// std::list, but std::vector.
     struct StateCollection
     {
     public: // Constructors
-            /// @brief Default constructor.
+        /// @brief Default constructor.
         StateCollection() = default;
 
         ~StateCollection()
@@ -170,11 +171,10 @@ namespace DXR
         /// @brief Add an association to the collection.
         /// @param subobjectIndex The index of the subobject to associate.
         /// @param associations The associations to add.
-        /// @param copy If true, the associations will be copied, otherwise they will be referenced.
-        /// If referenced, the user MUST ensure that the associations are AND the strings in the vector are alive when
-        /// the StateCollection is compiled.
-        /// @return The index of the association in the collection.
-        UINT32 AddAssociations(UINT32 subobjectIndex, std::vector<LPCWSTR> associations, bool copy = true)
+        /// @param copy If true, the associations will be copied, otherwise they will be referenced. If true, then new
+        /// heap allocations will be made in this case. If referenced, the user MUST ensure that the associations
+        /// AND the strings in the vector are alive when the StateCollection is compiled.
+        void AddAssociations(UINT32 subobjectIndex, std::vector<LPCWSTR> associations, bool copy = true)
         {
             D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION* association = new D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION();
             association->NumExports = static_cast<UINT>(associations.size());
@@ -215,8 +215,6 @@ namespace DXR
 
             mSubobjects.push_back(subobject);
             mSubobjectData.push_back(association);
-
-            return static_cast<UINT32>(mSubobjects.size() - 1);
         }
 
     public: // Members
@@ -244,6 +242,8 @@ namespace DXR
         /// @brief Get the pipeline state object.
         /// @return The pipeline state object.
         ComPtr<ID3D12StateObject> GetPipelineStateObject() const { return mPipelineStateObject; }
+
+        PipelineDesc GetDesc() const { return mPipelineStateDesc; }
 
     public: // Members
         /// @brief The pipeline state object.

@@ -62,22 +62,43 @@ namespace DXR
             CreateStateCollection(collection);
         }
 
-        // Now add the collection to the pipeline
+        // Copy the pipeline state desc
+
+        D3D12_RAYTRACING_SHADER_CONFIG shaderConfig = {};
+        shaderConfig.MaxAttributeSizeInBytes = pipeline.mPipelineStateDesc.MaxAttributeSizeInBytes;
+        shaderConfig.MaxPayloadSizeInBytes = pipeline.mPipelineStateDesc.MaxPayloadSizeInBytes;
+
+        D3D12_RAYTRACING_PIPELINE_CONFIG1 pipelineConfig = {};
+        pipelineConfig.MaxTraceRecursionDepth = pipeline.mPipelineStateDesc.MaxRecursionDepth;
+        pipelineConfig.Flags = pipeline.mPipelineStateDesc.PipelineFlags;
+
+        D3D12_STATE_OBJECT_CONFIG stateObjectConfig = {};
+        stateObjectConfig.Flags = D3D12_STATE_OBJECT_FLAG_ALLOW_STATE_OBJECT_ADDITIONS;
 
         D3D12_EXISTING_COLLECTION_DESC collectionDesc = {};
         collectionDesc.pExistingCollection = collection.mStateObject.Get();
         collectionDesc.NumExports = 0;
         collectionDesc.pExports = nullptr;
 
-        D3D12_STATE_SUBOBJECT subObject = {};
-        subObject.Type = D3D12_STATE_SUBOBJECT_TYPE_EXISTING_COLLECTION;
-        subObject.pDesc = &collectionDesc;
+        D3D12_STATE_SUBOBJECT subObjects[4] = {};
+        subObjects[0].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
+        subObjects[0].pDesc = &shaderConfig;
 
-        // Null it to use this for the new pipeline
+        subObjects[1].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG1;
+        subObjects[1].pDesc = &pipelineConfig;
+
+        subObjects[2].Type = D3D12_STATE_SUBOBJECT_TYPE_STATE_OBJECT_CONFIG;
+        subObjects[2].pDesc = &stateObjectConfig;
+
+        subObjects[3].Type = D3D12_STATE_SUBOBJECT_TYPE_EXISTING_COLLECTION;
+        subObjects[3].pDesc = &collectionDesc;
+
         D3D12_STATE_OBJECT_DESC stateObjectDesc = {};
         stateObjectDesc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
-        stateObjectDesc.NumSubobjects = 1;
-        stateObjectDesc.pSubobjects = &subObject;
+        stateObjectDesc.NumSubobjects = 4;
+        stateObjectDesc.pSubobjects = subObjects;
+
+        // Now add the collection to the pipeline
 
         ComPtr<ID3D12StateObject> newPipeline = nullptr;
         DXR_THROW_FAILED(mDevice->AddToStateObject(&stateObjectDesc, pipeline.mPipelineStateObject.Get(),
