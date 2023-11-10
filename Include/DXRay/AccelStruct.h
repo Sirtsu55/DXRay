@@ -1,6 +1,6 @@
 #pragma once
 
-#include "DXRay/DXRay.h"
+#include "DXRay/Common.h"
 
 namespace DXR
 {

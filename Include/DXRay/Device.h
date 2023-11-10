@@ -1,15 +1,13 @@
 #pragma once
+
+#include "DXRay/Common.h"
 #include "DXRay/AccelStruct.h"
-#include "DXRay/RayTracingPipeline.h"
+#include "DXRay/ShaderTable.h"
 
 // Namespace is too long to type out, so shorten it to DMA: |D|3D12 |M|emory |A|llocator
-namespace DMA = D3D12MA;
 
 namespace DXR
 {
-    // Ease of use of ComPtr
-    using Microsoft::WRL::ComPtr;
-
     /// @brief A wrapper around the D3D12 to use DXR.
     class Device
     {
@@ -138,32 +136,49 @@ namespace DXR
         // @@@@@@@@@@@@@@@@@@@@@@@@@ Ray Tracing Pipeline @@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-        /// @brief Create a ray tracing pipeline
-        /// @param desc The description of the pipeline, modifiable even after construction, but not implemented yet.
-        /// Open an issue if needed
-        RayTracingPipeline CreateRayTracingPipeline(const PipelineDesc& desc);
+        /// Information about Ray Tracing Pipelines
+        /// DXRay doesn't provide any abstraction for ray tracing pipelines other than creation / expanding
+        /// This is because there is already enough abstraction in the D3D12 API by CD3DX12_STATE_OBJECT_DESC and it is
+        /// not worth the effort to create a new abstraction layer for it as that is abstract enough for most use cases
+        /// and the library doesn't want to limit the user in any way.
 
-        /// @brief Create a StateCollection, You should call Add... to add all the subobjects before calling this
-        /// function. This function will compile all the subobjects to create a state collection that can be used to
-        /// expand a pipeline. This can take some time, so it is recommended to do this on a separate thread if
-        /// performance is critical.
-        /// @return The new StateCollection
-        void CreateStateCollection(StateCollection& collection);
+        /// @brief Create a ray tracing pipeline. This can take precious cpu time, so it is recommended compile
+        /// pipelines in parallel in other threads, but if it is small enough performance should be fine. Ideally
+        /// pipelines should be compiled once and added to incrementally, mitigating the performance hit to recompile
+        /// the whole pipeline again. This is done by using the D3D12_STATE_OBJECT_FLAG_ALLOW_STATE_OBJECT_ADDITION flag
+        /// when creating the pipeline and then using ExpandPipeline(...) to add a collection type state object to the
+        /// pipeline.
+        /// @param desc The description of the pipeline
+        /// @return The new pipeline
+        ComPtr<ID3D12StateObject> CreatePipeline(CD3DX12_STATE_OBJECT_DESC& desc);
 
-        /// @brief Expand a ray tracing pipeline with the given collection. Everything will be exported from the
-        /// collection and added to the pipeline. If StateCollection isn't compiled, it will be compiled on this thread.
-        /// @param pipeline The pipeline to expand, will be modified and replaced with a new RTPSO
-        /// @param collection The collection to expand with. This can be precompiled or not.
-        /// If not compiled, the compilation process happens on this thread and this function may take some time.
-        void ExpandRayTracingPipeline(RayTracingPipeline& pipeline, StateCollection& collection);
+        /// @brief Expand a pipeline by adding a collection type state object to it.
+        /// Both pipelines should be created with the D3D12_STATE_OBJECT_FLAG_ALLOW_STATE_OBJECT_ADDITION flag.
+        /// @param desc The description of the pipeline, should be of type D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE
+        /// and should contain D3D12_STATE_SUBOBJECT_TYPE_EXISTING_COLLECTION in the list of subobjects.
+        /// @param pipeline The pipeline to expand, should be of type D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE
+        /// @param collection The collection to add to the pipeline, should be of type
+        /// D3D12_STATE_OBJECT_TYPE_COLLECTION
+        /// @return The new expanded pipeline
+        ComPtr<ID3D12StateObject> ExpandPipeline(CD3DX12_STATE_OBJECT_DESC& desc, ComPtr<ID3D12StateObject>& pipeline,
+                                                 ComPtr<ID3D12StateObject>& collection);
+
+        /// @brief Create a shader table
+        /// @param table The shader table to create, filled with the shader names, etc.
+        /// @param heap The heap type to use for the shader table. This heap should be CPU accessible.
+        /// GPU_UPLOAD or UPLOAD are recommended, and if you really want to use DEFAULT, the table can act as a UPLOAD
+        /// buffer and copy the whole buffer via CopyShaderTable(...) to a GPU only buffer.
+        /// @param pipeline The pipeline to use for the shader table
+        /// @param rgen The ray generation shader to use for the shader table
+        void CreateShaderTable(ShaderTable& table, D3D12_HEAP_TYPE heap, ComPtr<ID3D12StateObject>& pipeline);
 
     private: // Internal methods
-        /// @brief Allocate a bottom level acceleration structure, used by AllocateAccelerationStructure(...) if the
-        /// type is bottom level
+        /// @brief Allocate a bottom level acceleration structure, used by AllocateAccelerationStructure(...) if
+        /// the type is bottom level
         ComPtr<DMA::Allocation> InternalAllocateBottomAccelerationStructure(AccelerationStructureDesc& desc);
 
-        /// @brief Allocate a top level acceleration structure, used by AllocateAccelerationStructure(...) if the type
-        /// is top level
+        /// @brief Allocate a top level acceleration structure, used by AllocateAccelerationStructure(...) if the
+        /// type is top level
         ComPtr<DMA::Allocation> InternalAllocateTopAccelerationStructure(AccelerationStructureDesc& desc);
 
     private:

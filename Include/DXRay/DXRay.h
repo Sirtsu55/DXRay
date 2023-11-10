@@ -22,9 +22,9 @@
 #include <vector>
 
 // All DXRay headers
+#include "DXRay/Common.h"
 #include "DXRay/Device.h"
 #include "DXRay/AccelStruct.h"
-#include "DXRay/RaytracingPipeline.h"
 
 // Use the Agility SDK Binary Version of D3D12
 #define DXRAY_AGILITY_SDK_IMPLEMENTATION                                                                               \
@@ -37,26 +37,3 @@
     {                                                                                                                  \
         __declspec(dllexport) extern const char8_t* D3D12SDKPath = u8"AgilitySDK\\";                                   \
     }
-
-// Helper Defines
-#define DXR_ALIGN(num, alignment) (((num) + alignment - 1) & ~(alignment - 1))
-
-// Enable debugging by default in debug builds, disable in release builds unless explicitly enabled
-#if defined(DXR_ENABLE_DEBUG) || _DEBUG
-#define DXR_LOG_DEBUG(msg) OutputDebugString(msg)
-#define DXR_ASSERT(cond, msg)                                                                                          \
-    if (!(cond))                                                                                                       \
-    {                                                                                                                  \
-        DXR_LOG_DEBUG(msg);                                                                                            \
-        __debugbreak();                                                                                                \
-    }
-#define DXR_THROW_FAILED(hresult)                                                                                      \
-    if (FAILED(hresult))                                                                                               \
-    {                                                                                                                  \
-        __debugbreak();                                                                                                \
-    }
-#else
-#define DXR_LOG_DEBUG(msg)
-#define DXR_ASSERT(cond, msg)
-#define DXR_THROW_FAILED(hresult)
-#endif
