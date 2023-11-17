@@ -6,10 +6,10 @@ namespace DXR
     {
         DXR_ASSERT(heap != D3D12_HEAP_TYPE_DEFAULT, "Shader table must be in heap that is CPU accessible");
 
-        UINT64 numRgen = table.mRayGenShaderNames.capacity();
-        UINT64 numMiss = table.mMissShaderNames.capacity();
-        UINT64 numHitGroup = table.mHitGroupShaderNames.capacity();
-        UINT64 numCallable = table.mCallableShaderNames.capacity();
+        UINT64 numRgen = table.mNumRayGenShaders;
+        UINT64 numMiss = table.mNumMissShaders;
+        UINT64 numHitGroup = table.mNumHitGroupShaders;
+        UINT64 numCallable = table.mNumCallableShaders;
 
         UINT64 rgenAlignedSize =
             DXR_ALIGN(numRgen * table.mRayGenShaderRecordSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
@@ -38,48 +38,51 @@ namespace DXR
 
         // Now that we have the pointers, we can fill in the shader table with identifiers
 
-        ComPtr<ID3D12StateObjectProperties> pipelineProps;
-        DXR_THROW_FAILED(pipeline->QueryInterface(IID_PPV_ARGS(&pipelineProps)));
+        ComPtr<ID3D12StateObjectProperties> stateObjectProps = nullptr;
+        DXR_THROW_FAILED(pipeline.As(&stateObjectProps));
 
-        for (UINT64 i = 0; i < table.mRayGenShaderNames.size(); i++)
+        for (auto& [name, entry] : table.mShaders)
         {
-            CHAR* idStart = table.mRayGenStartPtr + i * table.mRayGenShaderRecordSize;
-            memcpy(idStart, pipelineProps->GetShaderIdentifier(table.mRayGenShaderNames[i].c_str()),
-                   D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
-        }
 
-        for (UINT64 i = 0; i < table.mMissShaderNames.size(); i++)
-        {
-            CHAR* idStart = table.mMissStartPtr + i * table.mMissShaderRecordSize;
-            memcpy(idStart, pipelineProps->GetShaderIdentifier(table.mMissShaderNames[i].c_str()),
-                   D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
-        }
-
-        for (UINT64 i = 0; i < table.mHitGroupShaderNames.size(); i++)
-        {
-            CHAR* idStart = table.mHitGroupStartPtr + i * table.mHitGroupRecordSize;
-            memcpy(idStart, pipelineProps->GetShaderIdentifier(table.mHitGroupShaderNames[i].c_str()),
-                   D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
-        }
-
-        for (UINT64 i = 0; i < table.mCallableShaderNames.size(); i++)
-        {
-            CHAR* idStart = table.mCallableStartPtr + i * table.mCallableRecordSize;
-            memcpy(idStart, pipelineProps->GetShaderIdentifier(table.mCallableShaderNames[i].c_str()),
-                   D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+            switch (entry.Type)
+            {
+            case ShaderType::RayGen:
+            {
+                void* pShaderId = stateObjectProps->GetShaderIdentifier(name.c_str());
+                memcpy(table.mRayGenStartPtr + (table.mRayGenShadersBuilt * table.mRayGenShaderRecordSize), pShaderId,
+                       D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+                entry.Index = table.mRayGenShadersBuilt++; // Assign the index to the shader and increment the counter
+                break;
+            }
+            case ShaderType::Miss:
+            {
+                void* pShaderId = stateObjectProps->GetShaderIdentifier(name.c_str());
+                memcpy(table.mMissStartPtr + (table.mMissShadersBuilt * table.mMissShaderRecordSize), pShaderId,
+                       D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+                entry.Index = table.mMissShadersBuilt++; // Assign the index to the shader and increment the counter
+                break;
+            }
+            case ShaderType::HitGroup:
+            {
+                void* pShaderId = stateObjectProps->GetShaderIdentifier(name.c_str());
+                memcpy(table.mHitGroupStartPtr + (table.mHitGroupShadersBuilt * table.mHitGroupRecordSize), pShaderId,
+                       D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+                entry.Index = table.mHitGroupShadersBuilt++; // Assign the index to the shader and increment the counter
+                break;
+            }
+            case ShaderType::Callable:
+            {
+                void* pShaderId = stateObjectProps->GetShaderIdentifier(name.c_str());
+                memcpy(table.mCallableStartPtr + (table.mCallableShadersBuilt * table.mCallableRecordSize), pShaderId,
+                       D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES);
+                entry.Index = table.mCallableShadersBuilt++; // Assign the index to the shader and increment the counter
+                break;
+            }
+            }
         }
 
         table.mNeedsReallocation = false;
-
-        table.mRayGenShadersBuilt = table.mRayGenShaderNames.size();
-        table.mMissShadersBuilt = table.mMissShaderNames.size();
-        table.mHitGroupShadersBuilt = table.mHitGroupShaderNames.size();
-        table.mCallableShadersBuilt = table.mCallableShaderNames.size();
-
-        table.mRayGenShadersReserved = numRgen;
-        table.mMissShadersReserved = numMiss;
-        table.mHitGroupShadersReserved = numHitGroup;
-        table.mCallableShadersReserved = numCallable;
+        table.mNewShadersAdded = false;
     }
 
 } // namespace DXR
