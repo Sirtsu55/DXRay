@@ -17,4 +17,5 @@ namespace DXR
         DXR_THROW_FAILED(mDevice->AddToStateObject(desc, collection.Get(), IID_PPV_ARGS(&expandedPipeline)));
         return expandedPipeline;
     }
+
 } // namespace DXR

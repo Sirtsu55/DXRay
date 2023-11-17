@@ -25,7 +25,7 @@ namespace DMA = D3D12MA;
         __debugbreak();                                                                                                \
     }
 #else
-#define DXR_LOG_DEBUG(msg)
-#define DXR_ASSERT(cond, msg)
-#define DXR_THROW_FAILED(hresult)
+#define DXR_LOG_DEBUG(msg) ((void)0)
+#define DXR_ASSERT(cond, msg) ((void)0)
+#define DXR_THROW_FAILED(hresult) hresult
 #endif

@@ -143,12 +143,12 @@ namespace DXR
         return AllocateResource(resDesc, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_HEAP_TYPE_DEFAULT);
     }
 
-    ComPtr<DMA::Allocation> Device::AllocateInstanceBuffer(UINT64 numInstances)
+    ComPtr<DMA::Allocation> Device::AllocateInstanceBuffer(UINT64 numInstances, D3D12_HEAP_TYPE heapType)
     {
         D3D12_RESOURCE_DESC resDesc = CD3DX12_RESOURCE_DESC::Buffer(
             numInstances * sizeof(D3D12_RAYTRACING_INSTANCE_DESC), D3D12_RESOURCE_FLAG_NONE);
 
-        return AllocateResource(resDesc, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_HEAP_TYPE_GPU_UPLOAD);
+        return AllocateResource(resDesc, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, heapType);
     }
 
 } // namespace DXR

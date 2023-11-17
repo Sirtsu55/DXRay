@@ -126,11 +126,8 @@ namespace DXR
         /// better if reused every frame.
         /// @param numInstances The number of instances to allocate space for
         /// @return The new instance buffer
-        /// @note This function will allocate the buffer in GPU_UPLOAD heap type, so it can be directly copied to.
-        /// This means that the system should support ReBAR, otherwise the allocation will fail. This is why AgilitySDK
-        /// is downloaded with the project, to ensure that the system supports ReBAR. If you want to use a different
-        /// heap type, use AllocateResource(...) instead and manage the copy yourself.
-        ComPtr<DMA::Allocation> AllocateInstanceBuffer(UINT64 numInstances);
+        ComPtr<DMA::Allocation> AllocateInstanceBuffer(UINT64 numInstances,
+                                                       D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_UPLOAD);
 
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@ Ray Tracing Pipeline @@@@@@@@@@@@@@@@@@@@@@@@@
@@ -167,12 +164,16 @@ namespace DXR
         /// @param table The shader table to create, filled with the shader names, etc.
         /// @param heap The heap type to use for the shader table. This heap should be CPU accessible.
         /// GPU_UPLOAD or UPLOAD are recommended, and if you really want to use DEFAULT, the table can act as a UPLOAD
-        /// buffer and copy the whole buffer via CopyShaderTable(...) to a GPU only buffer.
+        /// buffer and copy the whole buffer via CopyBufferRegion(...) to a DEFAULT buffer.
         /// @param pipeline The pipeline to use for the shader table
-        /// @param rgen The ray generation shader to use for the shader table
         void CreateShaderTable(ShaderTable& table, D3D12_HEAP_TYPE heap, ComPtr<ID3D12StateObject>& pipeline);
 
-    private: // Internal methods
+        /// @todo Add support for shader table expansion
+        /// @todo Add support for copying shader tables to DEFAULT heap
+        /// @todo Add support for writing to local root signatures
+
+
+private: // Internal methods
         /// @brief Allocate a bottom level acceleration structure, used by AllocateAccelerationStructure(...) if
         /// the type is bottom level
         ComPtr<DMA::Allocation> InternalAllocateBottomAccelerationStructure(AccelerationStructureDesc& desc);
