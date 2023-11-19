@@ -5,26 +5,11 @@
 // INCLUDE THIS ONLY IN EXTERNAL PROJECTS, IE. ONLY FOR USERS OF DXR    //
 //////////////////////////////////////////////////////////////////////////
 
-// Windows Header Files
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <wrl.h>
-
-// DirectX Header Files
-#include <directx/d3d12.h>
-#include <directx/d3dx12.h>
-
-// D3D12 Memory Allocator
-#include <d3d12memalloc.h>
-
-// STL Headers
-#include <unordered_map>
-#include <vector>
-
 // All DXRay headers
 #include "DXRay/Common.h"
 #include "DXRay/Device.h"
 #include "DXRay/AccelStruct.h"
+#include "DXRay/ShaderTable.h"
 
 // Check if want to use the Agility SDK Binary Version of D3D12
 #ifdef DXRAY_AGILITY_SDK_VERSION
