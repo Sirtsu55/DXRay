@@ -67,71 +67,48 @@ namespace DXR
         /// @param height The height of the dispatch.
         /// @param depth The depth of the dispatch.
         /// @return The D3D12_DISPATCH_RAYS_DESC for the shader table.
-        D3D12_DISPATCH_RAYS_DESC GetRaysDesc(UINT32 rgen, UINT32 width, UINT32 height, UINT32 depth = 1) const
+        D3D12_DISPATCH_RAYS_DESC GetRaysDesc(UINT32 rgen, UINT32 width, UINT32 height, UINT32 depth = 1)
         {
-            D3D12_DISPATCH_RAYS_DESC desc = {};
-            desc.Width = width;
-            desc.Height = height;
-            desc.Depth = depth;
+            mDispatchDesc.Height = height;
+            mDispatchDesc.Width = width;
+            mDispatchDesc.Depth = depth;
 
-            auto virtualAddress = mShaderTable->GetResource()->GetGPUVirtualAddress();
+            mDispatchDesc.RayGenerationShaderRecord.StartAddress =
+                mShaderTableGPUAddress + (rgen * mRayGenShaderRecordSize);
 
-            desc.RayGenerationShaderRecord.StartAddress =
-                virtualAddress +
-                DXR_ALIGN(rgen * mRayGenShaderRecordSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
-            desc.RayGenerationShaderRecord.SizeInBytes = mRayGenShaderRecordSize;
-
-            virtualAddress +=
-                DXR_ALIGN(mNumRayGenShaders * mRayGenShaderRecordSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
-
-            if (mMissShadersBuilt > 0)
-            {
-                desc.MissShaderTable.StartAddress = virtualAddress;
-                desc.MissShaderTable.SizeInBytes = mMissShadersBuilt * mMissShaderRecordSize;
-                desc.MissShaderTable.StrideInBytes = mMissShaderRecordSize;
-            }
-
-            virtualAddress +=
-                DXR_ALIGN(mNumMissShaders * mMissShaderRecordSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
-
-            if (mHitGroupShadersBuilt > 0)
-            {
-                desc.HitGroupTable.StartAddress = virtualAddress;
-                desc.HitGroupTable.SizeInBytes = mHitGroupShadersBuilt * mHitGroupRecordSize;
-                desc.HitGroupTable.StrideInBytes = mHitGroupRecordSize;
-            }
-
-            virtualAddress +=
-                DXR_ALIGN(mNumHitGroupShaders * mHitGroupRecordSize, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
-
-            if (mCallableShadersBuilt > 0)
-            {
-                desc.CallableShaderTable.StartAddress = virtualAddress;
-                desc.CallableShaderTable.SizeInBytes = mCallableShadersBuilt * mCallableRecordSize;
-                desc.CallableShaderTable.StrideInBytes = mCallableRecordSize;
-            }
-
-            return desc;
+            return mDispatchDesc;
         }
 
         /// @brief Get the allocation for the shader table.
         /// @return The allocation for the shader table.
         ComPtr<DMA::Allocation> GetShaderTableAllocation() const { return mShaderTable; }
 
-        /// @brief Set the size of the shader records, not including the shader identifier.
+        /// @brief Set the size of the shader records, including the shader identifier, which is
+        /// D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES.
         /// @param size The size of the shader records.
         void SetShaderRecordSize(UINT64 size, ShaderType type)
         {
             DXR_ASSERT(mShaderTable != nullptr, "Shader table is already built. Cannot modify shader record size.");
-            DXR_ASSERT(size <= D3D12_RAYTRACING_MAX_SHADER_RECORD_STRIDE - D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES,
-                       "Shader record size is too large.");
+            DXR_ASSERT(size <= D3D12_RAYTRACING_MAX_SHADER_RECORD_STRIDE, "Shader record size is too large.");
 
             switch (type)
             {
-            case ShaderType::RayGen: mRayGenShaderRecordSize = size + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES; break;
-            case ShaderType::Miss: mMissShaderRecordSize = size + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES; break;
-            case ShaderType::HitGroup: mHitGroupRecordSize = size + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES; break;
-            case ShaderType::Callable: mCallableRecordSize = size + D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES; break;
+            case ShaderType::RayGen:
+                // Ray gen shaders are aligned to D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT, because there are only
+                // one per
+                // shader table.
+                mRayGenShaderRecordSize = DXR_ALIGN(size, D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT);
+                break;
+            case ShaderType::Miss:
+                mMissShaderRecordSize = DXR_ALIGN(size, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
+                break;
+            case ShaderType::HitGroup:
+                mHitGroupRecordSize = DXR_ALIGN(size, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
+                break;
+            case ShaderType::Callable:
+                mCallableRecordSize = DXR_ALIGN(size, D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
+                break;
+
             default: DXR_ASSERT(false, "Invalid shader type."); break;
             }
         }
@@ -196,6 +173,7 @@ namespace DXR
     private: // Members
         // The buffer resource for the shader table.
         ComPtr<DMA::Allocation> mShaderTable;
+        UINT64 mShaderTableGPUAddress = 0;
 
         // The pointer to the start of each shader table.
         CHAR* mRayGenStartPtr = nullptr;
@@ -231,6 +209,8 @@ namespace DXR
         UINT32 mNumMissShaders = 0;
         UINT32 mNumHitGroupShaders = 0;
         UINT32 mNumCallableShaders = 0;
+
+        D3D12_DISPATCH_RAYS_DESC mDispatchDesc = {};
 
         friend class Device;
     };

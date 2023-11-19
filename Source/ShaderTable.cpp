@@ -23,7 +23,7 @@ namespace DXR
         auto tableBufDesc = CD3DX12_RESOURCE_DESC::Buffer(rgenAlignedSize + missAlignedSize + hitGroupAlignedSize +
                                                           callableAlignedSize);
 
-        table.mShaderTable = AllocateResource(tableBufDesc, D3D12_RESOURCE_STATE_COMMON, heap,
+        table.mShaderTable = AllocateResource(tableBufDesc, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, heap,
                                               DMA::ALLOCATION_FLAG_NONE, D3D12_HEAP_FLAG_NONE);
 
         CHAR* pData = reinterpret_cast<CHAR*>(MapAllocationForWrite(table.mShaderTable));
@@ -79,6 +79,33 @@ namespace DXR
                 break;
             }
             }
+        }
+
+        table.mShaderTableGPUAddress = table.mShaderTable->GetResource()->GetGPUVirtualAddress();
+
+        if (table.mNumRayGenShaders > 0)
+        {
+            table.mDispatchDesc.RayGenerationShaderRecord.SizeInBytes = table.mRayGenShaderRecordSize;
+        }
+        if (table.mNumMissShaders > 0)
+        {
+            table.mDispatchDesc.MissShaderTable.StartAddress = table.mShaderTableGPUAddress + rgenAlignedSize;
+            table.mDispatchDesc.MissShaderTable.SizeInBytes = table.mMissShaderRecordSize * table.mNumMissShaders;
+            table.mDispatchDesc.MissShaderTable.StrideInBytes = table.mMissShaderRecordSize;
+        }
+        if (table.mNumHitGroupShaders > 0)
+        {
+            table.mDispatchDesc.HitGroupTable.StartAddress =
+                table.mShaderTableGPUAddress + rgenAlignedSize + missAlignedSize;
+            table.mDispatchDesc.HitGroupTable.SizeInBytes = table.mHitGroupRecordSize * table.mNumHitGroupShaders;
+            table.mDispatchDesc.HitGroupTable.StrideInBytes = table.mHitGroupRecordSize;
+        }
+        if (table.mNumCallableShaders > 0)
+        {
+            table.mDispatchDesc.CallableShaderTable.StartAddress =
+                table.mShaderTableGPUAddress + rgenAlignedSize + missAlignedSize + hitGroupAlignedSize;
+            table.mDispatchDesc.CallableShaderTable.SizeInBytes = table.mCallableRecordSize * table.mNumCallableShaders;
+            table.mDispatchDesc.CallableShaderTable.StrideInBytes = table.mCallableRecordSize;
         }
 
         table.mNeedsReallocation = false;
