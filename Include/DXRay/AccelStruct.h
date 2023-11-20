@@ -67,7 +67,7 @@ namespace DXR
 
         /// @brief TLAS ONLY; The number of instance descriptions.
         /// For TLAS builds, this must be set and the memory must be valid when building the acceleration structure.
-        UINT64 NumInstanceDescs = 0;
+        UINT32 NumInstanceDescs = 0;
 
     private: // Members, These are not meant to be filled by the user, thus private, but they can be read by the user
         /// @brief The prebuild info for the acceleration structure.

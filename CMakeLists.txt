@@ -42,6 +42,9 @@ set_target_properties(DXRay PROPERTIES CXX_STANDARD 20)
 # Precompiled Headers
 target_precompile_headers(DXRay PRIVATE "${PROJECT_SOURCE_DIR}/Include/DXRay/DXRay.h")
 
+# Link Libraries
+target_link_libraries(DXRay PRIVATE D3D12MemoryAllocator DirectX-Headers)
+
 # Set Compile Definitions
 if( DXRAY_USE_AGILITY_SDK )
 	target_compile_definitions(DXRay PUBLIC DXRAY_AGILITY_SDK_VERSION=711 DXRAY_AGILITY_SDK_PATH="AgilitySDK\\\\")
@@ -53,6 +56,7 @@ target_include_directories(DXRay PUBLIC
 	"${PROJECT_SOURCE_DIR}/Deps/DirectX-Headers/include"
 	"${PROJECT_SOURCE_DIR}/Deps/D3D12MemoryAllocator/include"
 )
+
 
 # If Agility SDK doesn't exist in binary directory, then copy the binaries from source directory
 if(NOT EXISTS "${CMAKE_BINARY_DIR}/Deps/AgilitySDK" AND DXRAY_USE_AGILITY_SDK)
