@@ -3,7 +3,7 @@
 project("DXRay")
 
 # Options for DXRay
-option(DXRAY_USE_AGILITY_SDK "Use the Agility SDK for GPU Upload Heap feature" OFF)
+option(DXRAY_USE_AGILITY_SDK "Use the Agility SDK" OFF)
 
 # Fetch the DirectX Agility SDK 
 set(AGILITY_SDK_URL "https://globalcdn.nuget.org/packages/microsoft.direct3d.d3d12.1.711.3-preview.nupkg")

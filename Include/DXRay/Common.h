@@ -18,7 +18,7 @@
 
 namespace DXR
 {
-    using namespace Microsoft::WRL;
+    using Microsoft::WRL::ComPtr;
 }
 
 // D3D12 Memory Allocator alias

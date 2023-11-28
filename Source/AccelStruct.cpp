@@ -6,14 +6,14 @@ namespace DXR
     {
         UINT64 size = 0;
 
-        for (auto& desc : descs)
-        {
-            size += desc.GetScratchBufferSize();
-            // Always align the size to the required alignment
-            size = DXR_ALIGN(size, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT);
-        }
+        for (auto& desc : descs) { size += GetRequiredScratchBufferSize(desc); }
 
         return size;
+    }
+
+    UINT64 Device::GetRequiredScratchBufferSize(AccelerationStructureDesc& descs)
+    {
+        return DXR_ALIGN(descs.GetScratchBufferSize(), D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT);
     }
 
     ComPtr<DMA::Allocation> Device::AllocateAccelerationStructure(AccelerationStructureDesc& desc)
@@ -99,7 +99,7 @@ namespace DXR
         return outAccel;
     }
 
-    void Device::BuildAccelerationStructure(AccelerationStructureDesc& desc,
+    void Device::BuildAccelerationStructure(const AccelerationStructureDesc& desc,
                                             ComPtr<ID3D12GraphicsCommandList4>& cmdList)
     {
         DXR_ASSERT(desc.HasBeenAllocated(), "Acceleration structure has not been allocated");
@@ -112,18 +112,23 @@ namespace DXR
     void Device::AssignScratchBuffer(std::vector<AccelerationStructureDesc>& descs, ComPtr<DMA::Allocation>& alloc)
     {
         UINT64 offset = 0;
-        UINT64 maxSize = alloc->GetSize();
         D3D12_GPU_VIRTUAL_ADDRESS baseAddress = alloc->GetResource()->GetGPUVirtualAddress();
 
         for (auto& desc : descs)
         {
-            desc.BuildDesc.ScratchAccelerationStructureData = baseAddress + offset;
-            offset += desc.GetScratchBufferSize();
-            offset = DXR_ALIGN(offset, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT);
-
-            if (offset > maxSize)
-                DXR_ASSERT(false, "Scratch buffer too small");
+            AssignScratchBuffer(desc, alloc, offset);
+            offset += GetRequiredScratchBufferSize(desc); // Alread aligned
         }
+    }
+
+    void Device::AssignScratchBuffer(AccelerationStructureDesc& desc, ComPtr<DMA::Allocation>& alloc, UINT64 offset)
+    {
+        DXR_ASSERT(offset + GetRequiredScratchBufferSize(desc) < alloc->GetSize(),
+                   "Scratch buffer is too small for the provided acceleration structure");
+
+        desc.BuildDesc.ScratchAccelerationStructureData =
+            DXR_ALIGN(alloc->GetResource()->GetGPUVirtualAddress() + offset,
+                      D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT);
     }
 
     ComPtr<DMA::Allocation> Device::AllocateAndAssignScratchBuffer(std::vector<AccelerationStructureDesc>& descs)
@@ -133,6 +138,17 @@ namespace DXR
         ComPtr<DMA::Allocation> scratchBuffer = AllocateScratchBuffer(size);
 
         AssignScratchBuffer(descs, scratchBuffer);
+
+        return scratchBuffer;
+    }
+
+    ComPtr<DMA::Allocation> Device::AllocateAndAssignScratchBuffer(AccelerationStructureDesc& desc)
+    {
+        UINT64 size = GetRequiredScratchBufferSize(desc);
+
+        ComPtr<DMA::Allocation> scratchBuffer = AllocateScratchBuffer(size);
+
+        AssignScratchBuffer(desc, scratchBuffer);
 
         return scratchBuffer;
     }

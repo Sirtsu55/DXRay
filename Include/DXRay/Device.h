@@ -53,6 +53,11 @@ namespace DXR
         /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch
         UINT64 GetRequiredScratchBufferSize(std::vector<AccelerationStructureDesc>& descs);
 
+        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures
+        /// This is the recommended function to call, because it will take into account the alignment requirements
+        /// @param desc The description of the acceleration structure which will be assigned a region of the scratch
+        UINT64 GetRequiredScratchBufferSize(AccelerationStructureDesc& descs);
+
         /// @brief Get the pool
         /// @return The pool, or null if no pool is set
         DMA::Pool* GetPool() const { return mPool; }
@@ -98,7 +103,16 @@ namespace DXR
         /// @brief Build an acceleration structure
         /// @param desc The description of the acceleration structure to build
         /// @param cmdList The command list to use for building
-        void BuildAccelerationStructure(AccelerationStructureDesc& desc, ComPtr<ID3D12GraphicsCommandList4>& cmdList);
+        void BuildAccelerationStructure(const AccelerationStructureDesc& desc,
+                                        ComPtr<ID3D12GraphicsCommandList4>& cmdList);
+
+        /// @brief Allocate a scratch buffer for building a bottom level acceleration structure. It will take into
+        /// account the alignment requirements.
+        /// @param descs The description of the acceleration structure which will be assigned a region of the scratch
+        /// buffer
+        /// @param alloc The scratch buffer to use. This allocation should be of the size returned by
+        /// GetRequiredScratchBufferSize(...) to ensure that it is large enough.
+        void AssignScratchBuffer(std::vector<AccelerationStructureDesc>& descs, ComPtr<DMA::Allocation>& alloc);
 
         /// @brief Allocate a scratch buffer for building a bottom level acceleration structure. It will take into
         /// account the alignment requirements.
@@ -106,7 +120,8 @@ namespace DXR
         /// buffer
         /// @param alloc The scratch buffer to use. This allocation should be of the size returned by
         /// GetRequiredScratchBufferSize(...) to ensure that it is large enough.
-        void AssignScratchBuffer(std::vector<AccelerationStructureDesc>& descs, ComPtr<DMA::Allocation>& alloc);
+        /// @param offset The offset into the scratch buffer to use, will be automatically aligned
+        void AssignScratchBuffer(AccelerationStructureDesc& desc, ComPtr<DMA::Allocation>& alloc, UINT64 offset = 0);
 
         /// @brief Allocate a big scratch buffer that will be used for all acceleration structures and assign regions
         /// to each acceleration structure. This is a convenience function that calls GetRequiredScratchBufferSize(...),
@@ -115,6 +130,12 @@ namespace DXR
         /// buffer
         /// @return The new scratch buffer
         ComPtr<DMA::Allocation> AllocateAndAssignScratchBuffer(std::vector<AccelerationStructureDesc>& descs);
+
+        /// @brief Allocate a scratch buffer of the given size
+        /// @param desc The description of the acceleration structure which will be assigned a region of the scratch
+        /// buffer
+        /// @param alloc The scratch buffer to use
+        ComPtr<DMA::Allocation> AllocateAndAssignScratchBuffer(AccelerationStructureDesc& desc);
 
         /// @brief Allocate a scratch buffer of the given size
         /// @param size The size of the scratch buffer
@@ -172,8 +193,7 @@ namespace DXR
         /// @todo Add support for copying shader tables to DEFAULT heap
         /// @todo Add support for writing to local root signatures
 
-
-private: // Internal methods
+    private: // Internal methods
         /// @brief Allocate a bottom level acceleration structure, used by AllocateAccelerationStructure(...) if
         /// the type is bottom level
         ComPtr<DMA::Allocation> InternalAllocateBottomAccelerationStructure(AccelerationStructureDesc& desc);
