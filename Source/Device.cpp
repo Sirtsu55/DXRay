@@ -2,7 +2,7 @@
 
 namespace DXR
 {
-    Device::Device(ComPtr<DXRDevice> device, ComPtr<IDXGIAdapter> adapter, ComPtr<DMA::Allocator> allocator)
+    Device::Device(ComPtr<IDXRDevice> device, ComPtr<IDXRAdapter> adapter, ComPtr<DMA::Allocator> allocator)
         : mDevice(device), mAdapter(adapter), mAllocator(allocator)
     {
         if (mAllocator == nullptr)
@@ -27,6 +27,38 @@ namespace DXR
         return mapped;
     }
 
+    ComPtr<ID3D12CommandQueue> Device::CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type)
+    {
+        ComPtr<ID3D12CommandQueue> cmdQueue;
+
+        D3D12_COMMAND_QUEUE_DESC desc = {};
+        desc.Type = type;
+        desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+
+        DXR_THROW_FAILED(mDevice->CreateCommandQueue(&desc, IID_PPV_ARGS(&cmdQueue)));
+
+        return cmdQueue;
+    }
+
+    ComPtr<ID3D12CommandAllocator> Device::CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type)
+    {
+        ComPtr<ID3D12CommandAllocator> cmdAlloc;
+
+        DXR_THROW_FAILED(mDevice->CreateCommandAllocator(type, IID_PPV_ARGS(&cmdAlloc)));
+
+        return cmdAlloc;
+    }
+
+    ComPtr<ID3D12GraphicsCommandList4> Device::CreateCommandList(D3D12_COMMAND_LIST_TYPE type,
+                                                                 ComPtr<ID3D12CommandAllocator>& allocator)
+    {
+        ComPtr<ID3D12GraphicsCommandList4> cmdList;
+
+        DXR_THROW_FAILED(mDevice->CreateCommandList1(0, type, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList)));
+
+        return cmdList;
+    }
+
     ComPtr<DMA::Allocation> Device::AllocateResource(const D3D12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES state,
                                                      D3D12_HEAP_TYPE heapType, DMA::ALLOCATION_FLAGS allocFlags,
                                                      D3D12_HEAP_FLAGS heapFlags)
@@ -37,9 +69,10 @@ namespace DXR
         allocDesc.HeapType = heapType;
         allocDesc.Flags = allocFlags;
         allocDesc.ExtraHeapFlags = heapFlags;
-        allocDesc.CustomPool = mPool; // if mPool is nullptr, the default pool will be used
+        allocDesc.CustomPool = mPool == nullptr ? nullptr : mPool.Get();
 
         DXR_THROW_FAILED(mAllocator->CreateResource(&allocDesc, &desc, state, nullptr, &outAlloc, {}, nullptr));
+
         return outAlloc;
     }
 

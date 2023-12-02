@@ -3,6 +3,7 @@
 #include "DXRay/Common.h"
 #include "DXRay/AccelStruct.h"
 #include "DXRay/ShaderTable.h"
+#include "DXRay/Fence.h"
 
 // Namespace is too long to type out, so shorten it to DMA: |D|3D12 |M|emory |A|llocator
 
@@ -11,10 +12,6 @@ namespace DXR
     /// @brief A wrapper around the D3D12 to use DXR.
     class Device
     {
-        /// @brief Alias for the D3D12 device type so it's easier to change later
-        /// if new versions are released
-        using DXRDevice = ID3D12Device7;
-        using DXRAdapter = IDXGIAdapter;
 
     public:
         /// @brief Create a Device
@@ -25,7 +22,7 @@ namespace DXR
         /// based on HRESULTs
         /// - If you want to use a custom allocator, create it before creating the device
         /// - If you want to use a custom pool, set it after creating the device
-        Device(ComPtr<DXRDevice> device, ComPtr<IDXGIAdapter> adapter, ComPtr<DMA::Allocator> allocator = nullptr);
+        Device(ComPtr<IDXRDevice> device, ComPtr<IDXRAdapter> adapter, ComPtr<DMA::Allocator> allocator = nullptr);
         ~Device();
 
         // Delete copy/move constructors and assignment operators
@@ -42,7 +39,7 @@ namespace DXR
 
         /// @brief Get the D3D12 device
         /// @return The D3D12 device
-        ComPtr<DXRDevice> GetD3D12Device() const { return mDevice; }
+        ComPtr<IDXRDevice> GetD3D12Device() const { return mDevice; }
 
         /// @brief Get the allocator
         /// @return The allocator
@@ -60,12 +57,12 @@ namespace DXR
 
         /// @brief Get the pool
         /// @return The pool, or null if no pool is set
-        DMA::Pool* GetPool() const { return mPool; }
+        ComPtr<DMA::Pool> GetPool() const { return mPool; }
 
         /// @brief Set the pool
         /// @param pool The pool to use for all allocations
         /// @note This will override the existing pool if one is already set
-        void SetPool(DMA::Pool* pool) { mPool = pool; }
+        void SetPool(const ComPtr<DMA::Pool>& pool) { mPool = pool; }
 
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Utilities @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -89,12 +86,35 @@ namespace DXR
         /// @return The mapped pointer
         void* MapAllocationForWrite(ComPtr<DMA::Allocation>& res);
 
+        /// @brief Create a fence
+        /// @param initialValue The initial value of the fence
+        /// @return The new fence
+        Fence CreateFence(UINT64 initialValue = 0);
+
+        /// @brief Create a command queue
+        /// @param type The type of command queue to create
+        /// @return The new command queue
+        ComPtr<ID3D12CommandQueue> CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type);
+
+        /// @brief Create a command allocator
+        /// @param type The type of command allocator to create
+        /// @return The new command allocator
+        ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type);
+
+        /// @brief Create a command list
+        /// @param type The type of command list to create
+        /// @param allocator The command allocator to use
+        /// @return The new command list
+        ComPtr<ID3D12GraphicsCommandList4> CreateCommandList(D3D12_COMMAND_LIST_TYPE type,
+                                                             ComPtr<ID3D12CommandAllocator>& allocator);
+
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Accel Struct @@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
         /// @brief Allocate a new acceleration structure. When allocating a bottom level acceleration structure,
-        /// the returned allocation's GPU virtual address is used for instance description acceleration structure field.
+        /// the returned allocation's GPU virtual address is used for instance description acceleration structure
+        /// field.
         /// @param desc The description of the acceleration structure. Will be modified and used when building the
         /// acceleration structure.
         /// @return The new acceleration structure.
@@ -204,15 +224,15 @@ namespace DXR
 
     private:
         /// @brief The D3D12 device
-        ComPtr<DXRDevice> mDevice = nullptr;
+        ComPtr<IDXRDevice> mDevice = nullptr;
 
         /// @brief The DXGI adapter
-        ComPtr<DXRAdapter> mAdapter = nullptr;
+        ComPtr<IDXRAdapter> mAdapter = nullptr;
 
         /// @brief The allocator to use for all allocations
         ComPtr<DMA::Allocator> mAllocator = nullptr;
 
         /// @brief The pool to use for all allocations
-        DMA::Pool* mPool = nullptr;
+        ComPtr<DMA::Pool> mPool = nullptr;
     };
 } // namespace DXR

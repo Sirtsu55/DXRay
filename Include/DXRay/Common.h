@@ -8,18 +8,31 @@
 // DirectX Header Files
 #include <directx/d3d12.h>
 #include <directx/d3dx12.h>
+#include <dxgi1_6.h>
 
 // D3D12 Memory Allocator
 #include <d3d12memalloc.h>
 
+// DirectXMath Header Files
+#include <DirectXMath.h>
+using namespace DirectX;
+
 // STL Headers
 #include <unordered_map>
 #include <vector>
+#include <stdexcept>
 
 namespace DXR
 {
     using Microsoft::WRL::ComPtr;
-}
+
+    /// @brief Alias for the D3D12 device type so it's easier to change later
+    /// if new versions are released
+    using IDXRDevice = ID3D12Device7;
+    using IDXRAdapter = IDXGIAdapter1;
+    using IDXRFactory = IDXGIFactory7;
+
+} // namespace DXR
 
 // D3D12 Memory Allocator alias
 namespace DMA = D3D12MA;

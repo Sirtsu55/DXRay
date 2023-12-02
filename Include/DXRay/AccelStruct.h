@@ -45,13 +45,17 @@ namespace DXR
         // @@@@@@@@@@@@@@@@@ Bottom Level Acceleration Structure @@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-        /// @brief BLAS ONLY; The geometry to create the acceleration structure for.
+        /// @brief BLAS ONLY; The geometry to create the acceleration structure for. When allocating the acceleration
+        /// structure, this is used to compute the prebuild info but vertex / index / transform / aabb GPU addresses
+        /// don't need to be valid. Upon building the acceleration structure, the GPU addresses must be valid.
         /// This or pGeometries must be set for BLAS building. No need to fill both.
         /// The pointers in this vector must be valid until the acceleration structure is built.
         std::vector<D3D12_RAYTRACING_GEOMETRY_DESC> Geometries = {};
 
-        /// @brief BLAS ONLY; The geometry to create the acceleration structure for, expressed as pointers.
-        /// This or Geometries must be set for BLAS building. No need to fill both.
+        /// @brief BLAS ONLY; The geometry to create the acceleration structure for, expressed as pointers. When
+        /// allocating the acceleration structure, this is used to compute the prebuild info but vertex / index /
+        /// transform / aabb GPU addresses don't need to be valid. Upon building the acceleration structure, the GPU
+        /// addresses must be valid. This or Geometries must be set for BLAS building. No need to fill both.
         std::vector<D3D12_RAYTRACING_GEOMETRY_DESC*> pGeometries = {};
 
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
