@@ -3,9 +3,6 @@
 #include "DXRay/Common.h"
 #include "DXRay/AccelStruct.h"
 #include "DXRay/ShaderTable.h"
-#include "DXRay/Fence.h"
-
-// Namespace is too long to type out, so shorten it to DMA: |D|3D12 |M|emory |A|llocator
 
 namespace DXR
 {
@@ -14,14 +11,14 @@ namespace DXR
     {
 
     public:
-        /// @brief Create a Device
-        /// @param device The D3D12 device to use
-        /// @param allocator The allocator to use for all allocations, if null a new allocator will be created
+        /// @brief Create a Device.
+        /// @param device The D3D12 device to use.
+        /// @param allocator The allocator to use for all allocations, if null a new allocator will be created.
         /// @note General Tips:
         /// - To get complete error messages, enable the debug layer and the info queue, DXRay only throws exceptions
-        /// based on HRESULTs
-        /// - If you want to use a custom allocator, create it before creating the device
-        /// - If you want to use a custom pool, set it after creating the device
+        /// based on HRESULTs.
+        /// - If you want to use a custom allocator, create it before creating the device.
+        /// - If you want to use a custom pool, set it after creating the device.
         Device(ComPtr<IDXRDevice> device, ComPtr<IDXRAdapter> adapter, ComPtr<DMA::Allocator> allocator = nullptr);
         ~Device();
 
@@ -37,44 +34,44 @@ namespace DXR
         // @@@@@@@@@@@@@@@@@@@@@@@@@@ Getters & Setters @@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-        /// @brief Get the D3D12 device
-        /// @return The D3D12 device
+        /// @brief Get the D3D12 device.
+        /// @return The D3D12 device.
         ComPtr<IDXRDevice> GetD3D12Device() const { return mDevice; }
 
-        /// @brief Get the allocator
-        /// @return The allocator
+        /// @brief Get the allocator.
+        /// @return The allocator.
         ComPtr<DMA::Allocator> GetAllocator() const { return mAllocator; }
 
-        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures
-        /// This is the recommended function to call, because it will take into account the alignment requirements
-        /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch
+        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures.
+        /// This is the recommended function to call, because it will take into account the alignment requirements.
+        /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch.
         UINT64 GetRequiredScratchBufferSize(std::vector<AccelerationStructureDesc>& descs);
 
-        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures
-        /// This is the recommended function to call, because it will take into account the alignment requirements
-        /// @param desc The description of the acceleration structure which will be assigned a region of the scratch
+        /// @brief Allocate a big scratch buffer that will be used for all acceleration structures.
+        /// This is the recommended function to call, because it will take into account the alignment requirements.
+        /// @param desc The description of the acceleration structure which will be assigned a region of the scratch.
         UINT64 GetRequiredScratchBufferSize(AccelerationStructureDesc& descs);
 
-        /// @brief Get the pool
-        /// @return The pool, or null if no pool is set
+        /// @brief Get the pool.
+        /// @return The pool, or null if no pool is set.
         ComPtr<DMA::Pool> GetPool() const { return mPool; }
 
-        /// @brief Set the pool
-        /// @param pool The pool to use for all allocations
-        /// @note This will override the existing pool if one is already set
+        /// @brief Set the pool.
+        /// @param pool The pool to use for all allocations.
+        /// @note This will override the existing pool if one is already set.
         void SetPool(const ComPtr<DMA::Pool>& pool) { mPool = pool; }
 
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Utilities @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-        /// @brief Allocate a resource
-        /// @param desc The description of the resource
-        /// @param state The initial state of the resource
-        /// @param heapType The type of heap to use, default is DEFAULT (GPU only)
-        /// @param allocFlags The allocation flags to use, default is NONE
-        /// @param heapFlags The heap flags to use, default is NONE
-        /// @return The new resource
+        /// @brief Allocate a resource.
+        /// @param desc The description of the resource.
+        /// @param state The initial state of the resource.
+        /// @param heapType The type of heap to use, default is DEFAULT (GPU only).
+        /// @param allocFlags The allocation flags to use, default is NONE.
+        /// @param heapFlags The heap flags to use, default is NONE.
+        /// @return The new resource.
         ComPtr<DMA::Allocation> AllocateResource(const D3D12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES state,
                                                  D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_DEFAULT,
                                                  DMA::ALLOCATION_FLAGS allocFlags = DMA::ALLOCATION_FLAG_NONE,
@@ -82,31 +79,28 @@ namespace DXR
 
         /// @brief Map a resource for only writing. It is always recommended to map persistently if the resource is
         /// located in CPU visible memory to avoid Map/Unmap overhead.
-        /// @param resource The resource to map
-        /// @return The mapped pointer
+        /// @param resource The resource to map.
+        /// @return The mapped pointer.
         void* MapAllocationForWrite(ComPtr<DMA::Allocation>& res);
 
-        /// @brief Create a fence
-        /// @param initialValue The initial value of the fence
-        /// @return The new fence
-        Fence CreateFence(UINT64 initialValue = 0);
-
-        /// @brief Create a command queue
-        /// @param type The type of command queue to create
-        /// @return The new command queue
+        /// @brief Create a command queue.
+        /// @param type The type of command queue to create.
+        /// @return The new command queue.
         ComPtr<ID3D12CommandQueue> CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type);
 
-        /// @brief Create a command allocator
-        /// @param type The type of command allocator to create
-        /// @return The new command allocator
+        /// @brief Create a command allocator.
+        /// @param type The type of command allocator to create.
+        /// @return The new command allocator.
         ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type);
 
-        /// @brief Create a command list
-        /// @param type The type of command list to create
-        /// @param allocator The command allocator to use
-        /// @return The new command list
-        ComPtr<ID3D12GraphicsCommandList4> CreateCommandList(D3D12_COMMAND_LIST_TYPE type,
-                                                             ComPtr<ID3D12CommandAllocator>& allocator);
+        /// @brief Create a command list.
+        /// @param type The type of command list to create.
+        /// @param allocator The command allocator to use.
+        /// @return The new command list.
+        ComPtr<ID3D12GraphicsCommandList4> CreateCommandList(D3D12_COMMAND_LIST_TYPE type);
+
+        /// @brief Create a fence.
+        ComPtr<ID3D12Fence> CreateFence(UINT64 initialValue = 0);
 
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Accel Struct @@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -120,16 +114,16 @@ namespace DXR
         /// @return The new acceleration structure.
         ComPtr<DMA::Allocation> AllocateAccelerationStructure(AccelerationStructureDesc& desc);
 
-        /// @brief Build an acceleration structure
-        /// @param desc The description of the acceleration structure to build
-        /// @param cmdList The command list to use for building
+        /// @brief Build an acceleration structure.
+        /// @param desc The description of the acceleration structure to build.
+        /// @param cmdList The command list to use for building.
         void BuildAccelerationStructure(const AccelerationStructureDesc& desc,
                                         ComPtr<ID3D12GraphicsCommandList4>& cmdList);
 
         /// @brief Allocate a scratch buffer for building a bottom level acceleration structure. It will take into
         /// account the alignment requirements.
         /// @param descs The description of the acceleration structure which will be assigned a region of the scratch
-        /// buffer
+        /// buffer.
         /// @param alloc The scratch buffer to use. This allocation should be of the size returned by
         /// GetRequiredScratchBufferSize(...) to ensure that it is large enough.
         void AssignScratchBuffer(std::vector<AccelerationStructureDesc>& descs, ComPtr<DMA::Allocation>& alloc);
@@ -137,36 +131,36 @@ namespace DXR
         /// @brief Allocate a scratch buffer for building a bottom level acceleration structure. It will take into
         /// account the alignment requirements.
         /// @param desc The description of the acceleration structure which will be assigned a region of the scratch
-        /// buffer
+        /// buffer.
         /// @param alloc The scratch buffer to use. This allocation should be of the size returned by
         /// GetRequiredScratchBufferSize(...) to ensure that it is large enough.
-        /// @param offset The offset into the scratch buffer to use, will be automatically aligned
+        /// @param offset The offset into the scratch buffer to use, will be automatically aligned.
         void AssignScratchBuffer(AccelerationStructureDesc& desc, ComPtr<DMA::Allocation>& alloc, UINT64 offset = 0);
 
         /// @brief Allocate a big scratch buffer that will be used for all acceleration structures and assign regions
         /// to each acceleration structure. This is a convenience function that calls GetRequiredScratchBufferSize(...),
         /// AllocateScratchBuffer(...) and AssignScratchBuffer(...) in that order.
         /// @param descs The descriptions of the acceleration structures which will be assigned a region of the scratch
-        /// buffer
-        /// @return The new scratch buffer
+        /// buffer.
+        /// @return The new scratch buffer.
         ComPtr<DMA::Allocation> AllocateAndAssignScratchBuffer(std::vector<AccelerationStructureDesc>& descs);
 
-        /// @brief Allocate a scratch buffer of the given size
+        /// @brief Allocate a scratch buffer of the given size.
         /// @param desc The description of the acceleration structure which will be assigned a region of the scratch
-        /// buffer
-        /// @param alloc The scratch buffer to use
+        /// buffer.
+        /// @param alloc The scratch buffer to use.
         ComPtr<DMA::Allocation> AllocateAndAssignScratchBuffer(AccelerationStructureDesc& desc);
 
-        /// @brief Allocate a scratch buffer of the given size
-        /// @param size The size of the scratch buffer
-        /// @return The new scratch buffer
+        /// @brief Allocate a scratch buffer of the given size.
+        /// @param size The size of the scratch buffer.
+        /// @return The new scratch buffer.
         ComPtr<DMA::Allocation> AllocateScratchBuffer(UINT64 size);
 
         /// @brief Allocate a instance buffer for a top level acceleration structure. These must then be filled with
         /// valid instance descriptions when building the acceleration structure. Can be discarded after building, but
         /// better if reused every frame.
-        /// @param numInstances The number of instances to allocate space for
-        /// @return The new instance buffer
+        /// @param numInstances The number of instances to allocate space for.
+        /// @return The new instance buffer.
         ComPtr<DMA::Allocation> AllocateInstanceBuffer(UINT64 numInstances,
                                                        D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_UPLOAD);
 
@@ -186,18 +180,18 @@ namespace DXR
         /// the whole pipeline again. This is done by using the D3D12_STATE_OBJECT_FLAG_ALLOW_STATE_OBJECT_ADDITION flag
         /// when creating the pipeline and then using ExpandPipeline(...) to add a collection type state object to the
         /// pipeline.
-        /// @param desc The description of the pipeline
-        /// @return The new pipeline
+        /// @param desc The description of the pipeline.
+        /// @return The new pipeline.
         ComPtr<ID3D12StateObject> CreatePipeline(CD3DX12_STATE_OBJECT_DESC& desc);
 
         /// @brief Expand a pipeline by adding a collection type state object to it.
         /// Both pipelines should be created with the D3D12_STATE_OBJECT_FLAG_ALLOW_STATE_OBJECT_ADDITION flag.
         /// @param desc The description of the pipeline, should be of type D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE
         /// and should contain D3D12_STATE_SUBOBJECT_TYPE_EXISTING_COLLECTION in the list of subobjects.
-        /// @param pipeline The pipeline to expand, should be of type D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE
+        /// @param pipeline The pipeline to expand, should be of type D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE.
         /// @param collection The collection to add to the pipeline, should be of type
-        /// D3D12_STATE_OBJECT_TYPE_COLLECTION
-        /// @return The new expanded pipeline
+        /// D3D12_STATE_OBJECT_TYPE_COLLECTION.
+        /// @return The new expanded pipeline.
         ComPtr<ID3D12StateObject> ExpandPipeline(CD3DX12_STATE_OBJECT_DESC& desc, ComPtr<ID3D12StateObject>& pipeline,
                                                  ComPtr<ID3D12StateObject>& collection);
 
@@ -206,33 +200,33 @@ namespace DXR
         /// @param heap The heap type to use for the shader table. This heap should be CPU accessible.
         /// GPU_UPLOAD or UPLOAD are recommended, and if you really want to use DEFAULT, the table can act as a UPLOAD
         /// buffer and copy the whole buffer via CopyBufferRegion(...) to a DEFAULT buffer.
-        /// @param pipeline The pipeline to use for the shader table
+        /// @param pipeline The pipeline to use for the shader table.
         void CreateShaderTable(ShaderTable& table, D3D12_HEAP_TYPE heap, ComPtr<ID3D12StateObject>& pipeline);
 
-        /// @todo Add support for shader table expansion
-        /// @todo Add support for copying shader tables to DEFAULT heap
-        /// @todo Add support for writing to local root signatures
+        /// @todo Add support for shader table expansion.
+        /// @todo Add support for copying shader tables to DEFAULT heap.
+        /// @todo Add support for writing to local root signatures.
 
     private: // Internal methods
         /// @brief Allocate a bottom level acceleration structure, used by AllocateAccelerationStructure(...) if
-        /// the type is bottom level
+        /// the type is bottom level.
         ComPtr<DMA::Allocation> InternalAllocateBottomAccelerationStructure(AccelerationStructureDesc& desc);
 
         /// @brief Allocate a top level acceleration structure, used by AllocateAccelerationStructure(...) if the
-        /// type is top level
+        /// type is top level.
         ComPtr<DMA::Allocation> InternalAllocateTopAccelerationStructure(AccelerationStructureDesc& desc);
 
     private:
-        /// @brief The D3D12 device
+        /// @brief The D3D12 device.
         ComPtr<IDXRDevice> mDevice = nullptr;
 
-        /// @brief The DXGI adapter
+        /// @brief The DXGI adapter.
         ComPtr<IDXRAdapter> mAdapter = nullptr;
 
-        /// @brief The allocator to use for all allocations
+        /// @brief The allocator to use for all allocations.
         ComPtr<DMA::Allocator> mAllocator = nullptr;
 
-        /// @brief The pool to use for all allocations
+        /// @brief The pool to use for all allocations.
         ComPtr<DMA::Pool> mPool = nullptr;
     };
 } // namespace DXR

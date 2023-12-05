@@ -27,7 +27,7 @@ namespace DXR
     using Microsoft::WRL::ComPtr;
 
     /// @brief Alias for the D3D12 device type so it's easier to change later
-    /// if new versions are released
+    /// if new versions are released.
     using IDXRDevice = ID3D12Device7;
     using IDXRAdapter = IDXGIAdapter1;
     using IDXRFactory = IDXGIFactory7;
@@ -35,12 +35,13 @@ namespace DXR
 } // namespace DXR
 
 // D3D12 Memory Allocator alias
+// Namespace is too long to type out, so shorten it to DMA: |D|3D12 |M|emory |A|llocator.
 namespace DMA = D3D12MA;
 
 // Helper Defines
 #define DXR_ALIGN(num, alignment) (((num) + alignment - 1) & ~(alignment - 1))
 
-// Enable debugging by default in debug builds, disable in release builds unless explicitly enabled
+// Enable debugging by default in debug builds, disable in release builds unless explicitly enabled.
 #if defined(DXR_ENABLE_DEBUG) || _DEBUG
 #define DXR_LOG_DEBUG(msg) OutputDebugStringA(msg)
 #define DXR_ASSERT(cond, msg)                                                                                          \

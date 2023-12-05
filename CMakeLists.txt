@@ -12,6 +12,7 @@ set(AGILITY_SDK_DIR "${PROJECT_SOURCE_DIR}/Deps/AgilitySDK")
 # Download the Agility SDK if it doesn't exist, If user wants to replace the sdk, then they can extract the zip file manually
 # to the AgilitySDK directory
 if(NOT EXISTS "${AGILITY_SDK_DIR}" AND DXRAY_USE_AGILITY_SDK)
+	message(STATUS "DXRay: Downloading Agility SDK")
 	file(DOWNLOAD ${AGILITY_SDK_URL} "${PROJECT_SOURCE_DIR}/Deps/AgilitySDK.zip" SHOW_PROGRESS)
 	file(MAKE_DIRECTORY ${AGILITY_SDK_DIR})
 	file(ARCHIVE_EXTRACT INPUT "${PROJECT_SOURCE_DIR}/Deps/AgilitySDK.zip" DESTINATION "${PROJECT_SOURCE_DIR}/Deps/AgilitySDK")

@@ -10,8 +10,6 @@
 #include "DXRay/Device.h"
 #include "DXRay/AccelStruct.h"
 #include "DXRay/ShaderTable.h"
-#include "DXRay/Swapchain.h"
-#include "DXRay/Fence.h"
 
 // Check if want to use the Agility SDK Binary Version of D3D12
 #ifdef DXRAY_AGILITY_SDK_VERSION

@@ -9,6 +9,7 @@ namespace DXR
 
         return pipeline;
     }
+
     ComPtr<ID3D12StateObject> Device::ExpandPipeline(CD3DX12_STATE_OBJECT_DESC& desc,
                                                      ComPtr<ID3D12StateObject>& pipeline,
                                                      ComPtr<ID3D12StateObject>& collection)

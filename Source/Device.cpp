@@ -49,14 +49,21 @@ namespace DXR
         return cmdAlloc;
     }
 
-    ComPtr<ID3D12GraphicsCommandList4> Device::CreateCommandList(D3D12_COMMAND_LIST_TYPE type,
-                                                                 ComPtr<ID3D12CommandAllocator>& allocator)
+    ComPtr<ID3D12GraphicsCommandList4> Device::CreateCommandList(D3D12_COMMAND_LIST_TYPE type)
     {
         ComPtr<ID3D12GraphicsCommandList4> cmdList;
 
         DXR_THROW_FAILED(mDevice->CreateCommandList1(0, type, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList)));
 
         return cmdList;
+    }
+
+    ComPtr<ID3D12Fence> Device::CreateFence(UINT64 initialValue)
+    {
+        ComPtr<ID3D12Fence> fence;
+
+        DXR_THROW_FAILED(mDevice->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
+        return fence;
     }
 
     ComPtr<DMA::Allocation> Device::AllocateResource(const D3D12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES state,
