@@ -27,45 +27,6 @@ namespace DXR
         return mapped;
     }
 
-    ComPtr<ID3D12CommandQueue> Device::CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type)
-    {
-        ComPtr<ID3D12CommandQueue> cmdQueue;
-
-        D3D12_COMMAND_QUEUE_DESC desc = {};
-        desc.Type = type;
-        desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-
-        DXR_THROW_FAILED(mDevice->CreateCommandQueue(&desc, IID_PPV_ARGS(&cmdQueue)));
-
-        return cmdQueue;
-    }
-
-    ComPtr<ID3D12CommandAllocator> Device::CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type)
-    {
-        ComPtr<ID3D12CommandAllocator> cmdAlloc;
-
-        DXR_THROW_FAILED(mDevice->CreateCommandAllocator(type, IID_PPV_ARGS(&cmdAlloc)));
-
-        return cmdAlloc;
-    }
-
-    ComPtr<ID3D12GraphicsCommandList4> Device::CreateCommandList(D3D12_COMMAND_LIST_TYPE type)
-    {
-        ComPtr<ID3D12GraphicsCommandList4> cmdList;
-
-        DXR_THROW_FAILED(mDevice->CreateCommandList1(0, type, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList)));
-
-        return cmdList;
-    }
-
-    ComPtr<ID3D12Fence> Device::CreateFence(UINT64 initialValue)
-    {
-        ComPtr<ID3D12Fence> fence;
-
-        DXR_THROW_FAILED(mDevice->CreateFence(initialValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)));
-        return fence;
-    }
-
     ComPtr<DMA::Allocation> Device::AllocateResource(const D3D12_RESOURCE_DESC& desc, D3D12_RESOURCE_STATES state,
                                                      D3D12_HEAP_TYPE heapType, DMA::ALLOCATION_FLAGS allocFlags,
                                                      D3D12_HEAP_FLAGS heapFlags)

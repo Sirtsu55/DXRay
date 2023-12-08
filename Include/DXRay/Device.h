@@ -83,25 +83,6 @@ namespace DXR
         /// @return The mapped pointer.
         void* MapAllocationForWrite(ComPtr<DMA::Allocation>& res);
 
-        /// @brief Create a command queue.
-        /// @param type The type of command queue to create.
-        /// @return The new command queue.
-        ComPtr<ID3D12CommandQueue> CreateCommandQueue(D3D12_COMMAND_LIST_TYPE type);
-
-        /// @brief Create a command allocator.
-        /// @param type The type of command allocator to create.
-        /// @return The new command allocator.
-        ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE type);
-
-        /// @brief Create a command list.
-        /// @param type The type of command list to create.
-        /// @param allocator The command allocator to use.
-        /// @return The new command list.
-        ComPtr<ID3D12GraphicsCommandList4> CreateCommandList(D3D12_COMMAND_LIST_TYPE type);
-
-        /// @brief Create a fence.
-        ComPtr<ID3D12Fence> CreateFence(UINT64 initialValue = 0);
-
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@ Accel Struct @@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
