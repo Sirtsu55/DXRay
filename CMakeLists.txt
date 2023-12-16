@@ -17,8 +17,11 @@ if(NOT EXISTS "${AGILITY_SDK_DIR}" AND DXRAY_USE_AGILITY_SDK)
 	file(MAKE_DIRECTORY ${AGILITY_SDK_DIR})
 	file(ARCHIVE_EXTRACT INPUT "${PROJECT_SOURCE_DIR}/Deps/AgilitySDK.zip" DESTINATION "${PROJECT_SOURCE_DIR}/Deps/AgilitySDK")
 	file(REMOVE "${PROJECT_SOURCE_DIR}/Deps/AgilitySDK.zip")
-else()
+elseif(NOT DXRAY_USE_AGILITY_SDK)
 	message(STATUS "DXRay: Agility SDK not downloaded. If you want to use the Agility SDK, then set DXRAY_USE_AGILITY_SDK to ON")
+
+elseif(EXISTS "${AGILITY_SDK_DIR}" AND DXRAY_USE_AGILITY_SDK)
+	message(STATUS "DXRay: Agility SDK already downloaded at ${AGILITY_SDK_DIR}")
 endif()
 
 # Set D3D12MA Agility SDK Variables. For some reason, you have to run CMake twice to get the variables to work

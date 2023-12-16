@@ -42,7 +42,7 @@ namespace DMA = D3D12MA;
 #define DXR_ALIGN(num, alignment) (((num) + alignment - 1) & ~(alignment - 1))
 
 // Enable debugging by default in debug builds, disable in release builds unless explicitly enabled.
-#if defined(DXR_ENABLE_DEBUG) || _DEBUG
+#if !defined(DXR_DISABLE_DEBUG)
 #define DXR_LOG_DEBUG(msg) OutputDebugStringA(msg)
 #define DXR_ASSERT(cond, msg)                                                                                          \
     if (!(cond))                                                                                                       \
