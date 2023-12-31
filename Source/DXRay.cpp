@@ -28,7 +28,8 @@ namespace DXR
             factory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)));
 
         // Feature level 12.2 is required for raytracing
-        DXR_THROW_FAILED(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_2, IID_PPV_ARGS(&device)));
+        DXR_THROW_FAILED_MSG(D3D12CreateDevice(adapter.Get(), D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device)),
+                             "No Suitable GPU found for Ray Tracing");
 
 #ifndef NDEBUG // Validation break on severity, only on debug builds.
         if (debug && (static_cast<D3D12_MESSAGE_SEVERITY>(breakSeverity) != UINT_MAX))

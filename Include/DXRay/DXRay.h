@@ -30,6 +30,12 @@
     static_assert(false, "Turn DXRAY_USE_AGILITY_SDK option on in CMakeLists.txt to use Agility SDK")
 #endif // DXRAY_AGILITY_SDK_VERSION
 
+#define DXR_THROW_FAILED_MSG(hr, msg)                                                                                  \
+    if (FAILED(hr))                                                                                                    \
+    {                                                                                                                  \
+        throw std::runtime_error(msg);                                                                                 \
+    }
+
 namespace DXR
 {
     /// @brief Creates a simple device with a factory and adapter.
